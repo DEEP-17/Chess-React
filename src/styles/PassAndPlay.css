@@ -187,3 +187,12 @@
 .pgn-navigation button:hover {
   background: var(--primary-color);
 }
+.board-wrapper {
+  position: relative;
+  z-index: 10; /* Bring board to front */
+}
+
+.pgn-container {
+  position: relative;
+  z-index: 5; /* Send panels to back */
+}

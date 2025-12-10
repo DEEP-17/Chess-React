@@ -1,293 +1,191 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import '../styles/PlayStockfish.css';
 
-const moveSound = new Audio('/sounds/move.mp3');
-const captureSound = new Audio('/sounds/capture.mp3');
-const checkSound = new Audio('/sounds/check.mp3');
-const endSound = new Audio('/sounds/end.mp3');
-const startSound = new Audio('/sounds/start.mp3');
-
 const PlayStockfish = () => {
   const [game, setGame] = useState(new Chess());
   const [gameActive, setGameActive] = useState(false);
+  
+  // Game Settings
   const [playerColor, setPlayerColor] = useState('white');
   const [difficulty, setDifficulty] = useState(5);
-  const [moveHistory, setMoveHistory] = useState([]);
-  const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
-  const [viewOnlyPosition, setViewOnlyPosition] = useState(null);
-  const [selectedSquare, setSelectedSquare] = useState(null);
   const [isComputerThinking, setIsComputerThinking] = useState(false);
 
+  // Navigation State
+  // We store the full history of FENs to allow navigation
+  const [history, setHistory] = useState([new Chess().fen()]);
+  const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
+
+  // Refs for Worker Communication (Prevents stale closures)
+  const gameRef = useRef(game);
   const stockfish = useRef(null);
-  const gameRef = useRef(null);
+  const playerColorRef = useRef(playerColor);
+  const gameActiveRef = useRef(gameActive);
 
+  // Sync refs with state
+  useEffect(() => { gameRef.current = game; }, [game]);
+  useEffect(() => { playerColorRef.current = playerColor; }, [playerColor]);
+  useEffect(() => { gameActiveRef.current = gameActive; }, [gameActive]);
+
+  // --- Initialize Stockfish Worker ---
   useEffect(() => {
-    gameRef.current = game;
-  }, [game]);
-
-  useEffect(() => {
-    if (typeof Worker !== 'undefined') {
-      try {
-        stockfish.current = new Worker('/stockfish.js');
-        stockfish.current.onmessage = handleStockfishMessage;
-      } catch (error) {
-        console.error('Failed to load Stockfish worker:', error);
-      }
-    }
-
-    return () => {
-      if (stockfish.current) {
-        stockfish.current.terminate();
+    stockfish.current = new Worker('/stockfish.js');
+    
+    stockfish.current.onmessage = (event) => {
+      const message = event.data;
+      if (message.startsWith('bestmove')) {
+        const bestMove = message.split(' ')[1];
+        if (bestMove && bestMove !== '(none)') {
+          const from = bestMove.substring(0, 2);
+          const to = bestMove.substring(2, 4);
+          const promotion = bestMove.length > 4 ? bestMove[4] : 'q';
+          
+          // Execute computer move
+          makeMove(from, to, promotion);
+          setIsComputerThinking(false);
+        }
       }
     };
-  }, []);
 
-  const handleStockfishMessage = (event) => {
-    const message = event.data;
+    return () => stockfish.current.terminate();
+  }, []); 
 
-    if (message.startsWith('bestmove')) {
-      const parts = message.split(' ');
-      const bestMove = parts[1];
-
-      if (bestMove && bestMove !== '(none)') {
-        const from = bestMove.substring(0, 2);
-        const to = bestMove.substring(2, 4);
-        const promotion = bestMove.length > 4 ? bestMove[4] : undefined;
-
-        setTimeout(() => {
-          executeMove(from, to, promotion);
-        }, 300);
-      }
-      setIsComputerThinking(false);
-    }
-  };
-
-  const startGame = () => {
-    try {
-      startSound.play().catch(() => {});
-    } catch (e) {
-      console.log('Sound play failed');
-    }
-
-    const newGame = new Chess();
-    setGame(newGame);
-    gameRef.current = newGame;
-    setGameActive(true);
-    setMoveHistory([]);
-    setCurrentMoveIndex(-1);
-    setViewOnlyPosition(null);
-    setSelectedSquare(null);
-
-    if (playerColor === 'black') {
-      setIsComputerThinking(true);
-      setTimeout(() => {
-        triggerStockfish(newGame);
-      }, 500);
-    }
-  };
+  // --- Game Logic ---
 
   const triggerStockfish = (gameInstance) => {
     if (!stockfish.current) return;
+    stockfish.current.postMessage(`position fen ${gameInstance.fen()}`);
+    stockfish.current.postMessage(`go depth ${difficulty}`);
+  };
+
+  const makeMove = useCallback((from, to, promotion = 'q') => {
+    // 1. Create a clone of the current game state to apply the move
+    const gameCopy = new Chess();
+    // Load PGN to preserve move history (1. e4 e5...)
+    gameCopy.loadPgn(gameRef.current.pgn()); 
 
     try {
-      stockfish.current.postMessage(`position fen ${gameInstance.fen()}`);
-      stockfish.current.postMessage(`go depth ${difficulty}`);
-    } catch (error) {
-      console.error('Failed to trigger Stockfish:', error);
-    }
-  };
-
-  const executeMove = (from, to, promotion = 'q') => {
-    setGame((prevGame) => {
-      const gameCopy = new Chess(prevGame.fen());
-
-      try {
-        const move = gameCopy.move({
-          from,
-          to,
-          promotion: promotion || 'q',
-        });
-
-        if (!move) {
-          return prevGame;
-        }
-
-        try {
-          if (move.captured) {
-            captureSound.play().catch(() => {});
-          } else if (gameCopy.in_check()) {
-            checkSound.play().catch(() => {});
-          } else {
-            moveSound.play().catch(() => {});
-          }
-        } catch (e) {
-          console.log('Sound play failed');
-        }
-
-        const newHistory = [...moveHistory, gameCopy.fen()];
-        setMoveHistory(newHistory);
+      const move = gameCopy.move({ from, to, promotion });
+      
+      if (move) {
+        setGame(gameCopy);
+        
+        // Update History
+        const newHistory = [...history, gameCopy.fen()];
+        setHistory(newHistory);
         setCurrentMoveIndex(newHistory.length - 1);
 
-        if (gameCopy.game_over()) {
-          try {
-            endSound.play().catch(() => {});
-          } catch (e) {
-            console.log('Sound play failed');
-          }
+        // Check Game Over
+        if (gameCopy.isGameOver()) {
           setGameActive(false);
-
-          if (gameCopy.in_checkmate()) {
-            const winner = gameCopy.turn() === 'w' ? 'Black' : 'White';
-            alert(`Checkmate! ${winner} wins!`);
-          } else if (gameCopy.in_draw()) {
-            alert('Draw!');
-          }
-        } else if (gameActive && gameCopy.turn() !== playerColor[0]) {
-          setIsComputerThinking(true);
-          setTimeout(() => {
-            triggerStockfish(gameCopy);
-          }, 500);
+          let msg = "Game Over";
+          if (gameCopy.isCheckmate()) msg = `Checkmate! ${gameCopy.turn() === 'w' ? 'Black' : 'White'} wins!`;
+          else if (gameCopy.isDraw()) msg = "Draw!";
+          
+          setTimeout(() => alert(msg), 100);
+          return;
         }
 
-        gameRef.current = gameCopy;
-        return gameCopy;
-      } catch (error) {
-        console.error('Move execution error:', error);
-        return prevGame;
+        // If it's now the computer's turn, trigger it
+        // We use Refs here to ensure we read the latest active state inside callbacks
+        if (gameActiveRef.current && gameCopy.turn() !== playerColorRef.current[0]) {
+          setIsComputerThinking(true);
+          setTimeout(() => triggerStockfish(gameCopy), 500);
+        }
       }
-    });
-  };
+    } catch (e) {
+      console.error(e);
+    }
+  }, [history, difficulty]); 
 
-  const onPieceDrop = (sourceSquare, targetSquare) => {
-    if (!gameActive || viewOnlyPosition !== null || isComputerThinking) {
+  const onDrop = (sourceSquare, targetSquare) => {
+    // 1. Basic checks
+    if (!gameActive || isComputerThinking) return false;
+    
+    // 2. Ensure it's player's turn
+    if (game.turn() !== playerColor[0]) return false;
+
+    // 3. Ensure we are in "Live" mode (not reviewing history)
+    if (currentMoveIndex !== history.length - 1) {
+      alert("You are reviewing past moves. Click 'Live' to play.");
       return false;
     }
 
-    const currentGame = gameRef.current;
+    // 4. Attempt Move logic (Optimistic UI update)
+    const gameCopy = new Chess();
+    gameCopy.loadPgn(game.pgn());
 
-    if (!currentGame) {
-      return false;
-    }
-
-    if (currentGame.turn() !== playerColor[0]) {
-      return false;
-    }
-
-    const piece = currentGame.get(sourceSquare);
-    if (!piece || piece.color !== playerColor[0]) {
-      return false;
-    }
-
-    const gameCopy = new Chess(currentGame.fen());
     try {
       const move = gameCopy.move({
         from: sourceSquare,
         to: targetSquare,
-        promotion: 'q',
-      });
-
-      if (!move) {
-        return false;
-      }
-
-      setSelectedSquare(null);
-      executeMove(sourceSquare, targetSquare, 'q');
-      return true;
-    } catch (error) {
-      console.error('Drag and drop error:', error);
-      return false;
-    }
-  };
-
-  const onSquareClick = (square) => {
-    if (!gameActive || viewOnlyPosition !== null || isComputerThinking) {
-      setSelectedSquare(null);
-      return;
-    }
-
-    const currentGame = gameRef.current;
-
-    if (!currentGame) {
-      return;
-    }
-
-    if (currentGame.turn() !== playerColor[0]) {
-      setSelectedSquare(null);
-      return;
-    }
-
-    if (!selectedSquare) {
-      const piece = currentGame.get(square);
-      if (piece && piece.color === playerColor[0]) {
-        setSelectedSquare(square);
-      }
-      return;
-    }
-
-    if (selectedSquare === square) {
-      setSelectedSquare(null);
-      return;
-    }
-
-    const gameCopy = new Chess(currentGame.fen());
-    try {
-      const move = gameCopy.move({
-        from: selectedSquare,
-        to: square,
-        promotion: 'q',
+        promotion: 'q'
       });
 
       if (move) {
-        setSelectedSquare(null);
-        executeMove(selectedSquare, square, 'q');
-      } else {
-        const piece = currentGame.get(square);
-        if (piece && piece.color === playerColor[0]) {
-          setSelectedSquare(square);
-        } else {
-          setSelectedSquare(null);
-        }
+        makeMove(sourceSquare, targetSquare, 'q'); // Call main handler
+        return true;
       }
-    } catch (error) {
-      console.error('Click move error:', error);
-      setSelectedSquare(null);
+    } catch (e) { return false; }
+    return false;
+  };
+
+  // --- Controls ---
+
+  const startGame = () => {
+    const newGame = new Chess();
+    setGame(newGame);
+    setGameActive(true);
+    // Reset history
+    const startFen = newGame.fen();
+    setHistory([startFen]);
+    setCurrentMoveIndex(0);
+    
+    setIsComputerThinking(false);
+
+    // If player chose black, computer moves first
+    if (playerColor === 'black') {
+      setIsComputerThinking(true);
+      setTimeout(() => triggerStockfish(newGame), 500);
     }
   };
 
   const handleResign = () => {
     if (!gameActive) return;
-    if (confirm('Are you sure you want to resign?')) {
-      setGameActive(false);
-      try {
-        endSound.play().catch(() => {});
-      } catch (e) {
-        console.log('Sound play failed');
-      }
-      alert('You resigned. Stockfish wins!');
-    }
+    setGameActive(false);
+    alert("You resigned. Stockfish wins!");
   };
 
-  const navigateHistory = (index) => {
-    if (index < -1 || index >= moveHistory.length) return;
-    setCurrentMoveIndex(index);
-    if (index === -1) {
-      setViewOnlyPosition('start');
-    } else {
-      setViewOnlyPosition(moveHistory[index]);
-    }
+  // --- PGN Cleaning Helper ---
+  const getMovesOnly = (pgnString) => {
+    // Regex to remove [Header "Value"] blocks
+    let moves = pgnString.replace(/\[.*?\]\s*/g, '').trim();
+    // Remove standalone result asterisk if it exists alone
+    if (moves === "*") return "";
+    return moves;
   };
 
-  const getPGNText = () => {
-    const history = gameRef.current?.history() || [];
-    return history.reduce((acc, move, index) => {
-      if (index % 2 === 0) return `${acc} ${Math.floor(index / 2) + 1}. ${move}`;
-      return `${acc} ${move}`;
-    }, '');
+  const getCleanPgnDisplay = () => {
+    if (history.length <= 1) return "Moves will appear here...";
+    return getMovesOnly(game.pgn());
   };
 
-  const boardPosition = viewOnlyPosition || gameRef.current?.fen();
+  const handleCopyPgn = () => {
+    const cleanPgn = getMovesOnly(game.pgn());
+    navigator.clipboard.writeText(cleanPgn);
+    alert("Moves copied to clipboard!");
+  };
+
+  // --- Navigation Handlers ---
+  const navFirst = () => setCurrentMoveIndex(0);
+  const navPrev = () => setCurrentMoveIndex(prev => Math.max(0, prev - 1));
+  const navNext = () => setCurrentMoveIndex(prev => Math.min(history.length - 1, prev + 1));
+  const navLast = () => setCurrentMoveIndex(history.length - 1);
+  const navStop = () => setCurrentMoveIndex(history.length - 1); // Live
+
+  // Determine display position (History vs Live)
+  const displayPosition = history[currentMoveIndex] || game.fen();
 
   return (
     <div className="stockfish-container">
@@ -296,8 +194,8 @@ const PlayStockfish = () => {
       <div className="controls">
         <div className="control-group">
           <label>Choose Color</label>
-          <select
-            value={playerColor}
+          <select 
+            value={playerColor} 
             onChange={(e) => setPlayerColor(e.target.value)}
             disabled={gameActive}
           >
@@ -306,99 +204,61 @@ const PlayStockfish = () => {
           </select>
         </div>
         <div className="control-group">
-          <label>Difficulty (Depth)</label>
-          <select
-            value={difficulty}
+          <label>Difficulty</label>
+          <select 
+            value={difficulty} 
             onChange={(e) => setDifficulty(parseInt(e.target.value))}
             disabled={gameActive}
           >
-            <option value="1">Level 1 (Beginner)</option>
-            <option value="5">Level 5 (Intermediate)</option>
-            <option value="10">Level 10 (Advanced)</option>
-            <option value="15">Level 15 (Expert)</option>
+            <option value="1">Beginner</option>
+            <option value="5">Intermediate</option>
+            <option value="10">Advanced</option>
+            <option value="15">Expert</option>
           </select>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={startGame}
-          disabled={gameActive}
-        >
-          Start New Game
+        <button className="btn btn-primary" onClick={startGame}>
+          {gameActive ? 'Restart Game' : 'Start New Game'}
         </button>
       </div>
-
-      {isComputerThinking && (
-        <div className="thinking-indicator">
-          <span>Stockfish is thinking...</span>
-        </div>
-      )}
 
       <div className="main-section">
         <div className="board-wrapper">
           <div style={{ width: '500px', height: '500px' }}>
-            <Chessboard
-              position={boardPosition}
+            <Chessboard 
+              position={displayPosition} 
+              onPieceDrop={onDrop}
               boardOrientation={playerColor}
-              customSquareStyles={{
-                ...(selectedSquare
-                  ? {
-                      [selectedSquare]: {
-                        background: 'rgba(255, 200, 0, 0.5)',
-                        borderRadius: '4px',
-                      },
-                    }
-                  : {}),
-              }}
+              // Only allow drag if active, player's turn, and computer isn't thinking
+              arePiecesDraggable={
+                gameActive && 
+                !isComputerThinking && 
+                currentMoveIndex === history.length - 1 && // Must be in live view
+                game.turn() === playerColor[0]
+              }
               animationDuration={200}
-              options={{
-                onPieceDrop,
-                onSquareClick,
-                arePiecesDraggable: () =>
-                  gameActive && viewOnlyPosition === null && !isComputerThinking,
-              }}
             />
           </div>
-          <button
-            className="btn btn-danger"
-            onClick={handleResign}
-            disabled={!gameActive}
-          >
-            Resign Game
-          </button>
+          {isComputerThinking && <p style={{color: '#aaa', marginTop: '10px'}}>Stockfish is thinking...</p>}
         </div>
 
         <div className="pgn-container">
-          <div className="pgn-display">
-            {getPGNText() || 'Moves will appear here...'}
+          <div className="pgn-display" style={{ whiteSpace: 'pre-wrap' }}>
+            {getCleanPgnDisplay()}
           </div>
-          <div className="pgn-navigation">
-            <button
-              onClick={() => navigateHistory(-1)}
-              disabled={currentMoveIndex === -1}
-            >
-              |◀
-            </button>
-            <button
-              onClick={() => navigateHistory(currentMoveIndex - 1)}
-              disabled={currentMoveIndex <= -1}
-            >
-              ◀
-            </button>
-            <button
-              onClick={() => navigateHistory(currentMoveIndex + 1)}
-              disabled={currentMoveIndex >= moveHistory.length - 1}
-            >
-              ▶
-            </button>
-            <button
-              onClick={() => {
-                setViewOnlyPosition(null);
-                setCurrentMoveIndex(moveHistory.length - 1);
-              }}
-              disabled={currentMoveIndex === moveHistory.length - 1}
-            >
-              ▶| (Live)
-            </button>
+          
+          <div className="pgn-navigation" style={{ marginBottom: '10px' }}>
+            <button onClick={navFirst} disabled={currentMoveIndex === 0}>|◀</button>
+            <button onClick={navPrev} disabled={currentMoveIndex === 0}>◀</button>
+            <button onClick={navStop} title="Return to Live Game">Live</button>
+            <button onClick={navNext} disabled={currentMoveIndex === history.length - 1}>▶</button>
+            <button onClick={navLast} disabled={currentMoveIndex === history.length - 1}>▶|</button>
+          </div>
+
+          <div className="game-actions" style={{display: 'flex', gap: '10px', flexWrap: 'wrap'}}>
+             <button className="btn" style={{flex: 1}} onClick={handleCopyPgn}>Copy PGN</button>
+             <button className="btn btn-danger" style={{flex: 1}} onClick={handleResign} disabled={!gameActive}>
+               Resign
+             </button>
           </div>
         </div>
       </div>

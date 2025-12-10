@@ -1,4 +1,3 @@
-/* src/styles/Evaluate.css */
 .evaluate-container {
   display: flex;
   flex-direction: column;
@@ -62,10 +61,14 @@
   align-items: flex-start;
   flex-wrap: wrap;
   justify-content: center;
+  width: 100%; /* Ensure it takes full width */
 }
 
+/* --- CRITICAL FIXES HERE --- */
 .board-wrapper {
   display: flex;
+  flex-direction: row; /* Force side-by-side layout */
+  align-items: flex-start;
   gap: 1rem;
   background: rgba(255, 255, 255, 0.1);
   padding: 1rem;
@@ -73,17 +76,18 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
-/* Evaluation Bar Styles */
 .eval-bar-container {
   width: 24px;
-  height: 560px; /* Matches board height approx */
+  height: 560px; /* Matches board height */
   background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   overflow: hidden;
   position: relative;
   display: flex;
-  flex-direction: column-reverse; /* Builds from bottom up */
+  flex-direction: column-reverse;
+  flex-shrink: 0; /* Prevent the bar from disappearing if space is tight */
 }
+/* --------------------------- */
 
 .eval-bar-fill {
   width: 100%;
@@ -100,6 +104,8 @@
   font-weight: bold;
   color: #333;
   margin-top: 2px;
+  width: 100%;
+  text-align: center;
 }
 
 /* PGN & Navigation */

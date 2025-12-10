@@ -1,198 +1,252 @@
-/* src/styles/PassAndPlay.css */
-.pass-play-container {
-  --primary-color: #2563eb;
-  --primary-hover: #1d4ed8;
-  --bg-dark: #0f172a;
-  --bg-darker: #020617;
-  --text-light: #f8fafc;
-  --text-gray: #94a3b8;
-  --card-bg: #1e293b;
-  --card-hover: #334155;
-  --accent-green: #22c55e;
-  --accent-red: #ef4444;
-  --border-color: #334155;
-  --highlight-color: rgba(37, 99, 235, 0.4);
+:root {
+  --gold: #d4af37;
+  --gold-light: #f4d03f;
+  --gold-dark: #b8941f;
+  --black: #0a0a0a;
+  --black-light: #1a1a1a;
+  --black-lighter: #2a2a2a;
+  --white: #ffffff;
+  --gray: #888888;
+  --gray-light: #cccccc;
+}
 
+/* Root */
+.passplay-root {
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--bg-darker) 0%, var(--bg-dark) 100%);
-  color: var(--text-light);
-  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, var(--black) 0%, var(--black-light) 100%);
+  color: var(--gray-light);
+  font-family: Inter, sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem;
+  padding: 0.75rem 1rem 1rem;
 }
 
-.pass-play-container h1 {
-  font-size: 2.5rem;
-  margin-bottom: 2rem;
-  background: linear-gradient(45deg, var(--primary-color), #818cf8);
+/* Title */
+.passplay-title {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(45deg, var(--gold), var(--gold-light));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-align: center;
   font-weight: 700;
 }
 
-.controls {
-  background: var(--card-bg);
-  padding: 1.5rem;
-  border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+/* Main layout */
+.passplay-main {
   display: flex;
-  gap: 1.5rem;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: center;
-  width: 100%;
-  max-width: 800px;
-}
-
-.time-input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.time-input-group label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-gray);
-}
-
-.time-input-group input[type="number"] {
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--border-color);
-  background: var(--bg-darker);
-  color: var(--text-light);
-  font-size: 0.875rem;
-  width: 100px;
-}
-
-.main-section {
-  display: flex;
-  gap: 2rem;
+  gap: 1rem;
   align-items: flex-start;
-  flex-wrap: wrap;
   justify-content: center;
   width: 100%;
   max-width: 1200px;
 }
 
-.board-wrapper {
-  background: var(--card-bg);
-  padding: 1.5rem;
+/* Board card */
+.passplay-board-card {
+  background: var(--black-lighter);
+  padding: 0.75rem;
   border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--gold-dark);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.clock {
-  background: var(--bg-darker);
-  padding: 1rem;
+/* Clocks */
+.passplay-clocks {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  width: 600px;
+  justify-content: space-between;
+}
+
+.pp-clock {
+  padding: 0.55rem 0.9rem;
   border-radius: 0.5rem;
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 600;
   text-align: center;
-  margin: 1rem 0;
-  border: 1px solid var(--border-color);
-  width: 100%;
+  flex: 1;
+  transition: 0.3s;
 }
 
-.clock.active {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 10px rgba(37, 99, 235, 0.2);
+.pp-clock-white {
+  background: var(--white);
+  color: var(--black);
+  border: 2px solid var(--gold-dark);
 }
 
-.pgn-container {
-  background: var(--card-bg);
-  padding: 1.5rem;
+.pp-clock-black {
+  background: var(--black);
+  color: var(--white);
+  border: 2px solid var(--gold-dark);
+}
+
+.pp-clock-active-white,
+.pp-clock-active-black {
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+  border-color: var(--gold);
+}
+
+/* Board wrapper: keep full 600x600 */
+.passplay-board-wrapper {
+  width: 600px;
+  height: 600px;
+}
+
+/* Sidebar */
+.passplay-sidebar {
+  background: var(--black-lighter);
+  padding: 0.9rem;
   border-radius: 1rem;
-  min-width: 300px;
-  max-width: 400px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--gold-dark);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
+  min-width: 320px;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
 }
 
-.pgn-display {
-  background: var(--bg-darker);
-  padding: 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--border-color);
-  color: var(--text-light);
-  font-family: 'Courier New', monospace;
-  height: 300px;
-  overflow-y: auto;
-  margin-bottom: 1rem;
-  white-space: pre-wrap;
+/* Sidebar time controls */
+.passplay-sidebar-controls {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.passplay-time-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.passplay-time-label {
+  font-size: 0.8rem;
+  color: var(--gray-light);
+}
+
+.passplay-time-input-field {
+  width: 80px;
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--gold-dark);
+  background: var(--black);
+  color: var(--white);
+  font-size: 0.85rem;
+}
+
+.passplay-time-input-field:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Buttons */
-.btn {
-  padding: 0.75rem 1.5rem;
+.pp-btn,
+.pp-btn-small,
+.pp-btn-action {
+  padding: 0.55rem 1rem;
   border-radius: 0.5rem;
   border: none;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 0.875rem;
+}
+
+/* Start/Restart button */
+.pp-btn-primary {
+  background: var(--gold);
+  color: var(--black);
+  white-space: nowrap;
+}
+.pp-btn-primary:hover {
+  background: var(--gold-light);
+}
+
+/* PGN box */
+.passplay-pgn-box {
+  background: var(--black);
+  padding: 0.7rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--gold-dark);
+  font-family: "Courier New", monospace;
+  height: 200px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+}
+
+/* Nav buttons row */
+.passplay-nav-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+/* Small nav buttons */
+.pp-btn-small {
+  font-size: 0.85rem;
+}
+
+/* You can keep your existing nav color styles or adjust them here */
+.pp-nav-btn-first,
+.pp-nav-btn-last {
+  background: #4ade80;
+}
+
+.pp-nav-btn-prev,
+.pp-nav-btn-next {
+  background: #60a5fa;
+}
+
+.pp-nav-btn-live {
+  background: #a855f7;
   color: white;
 }
 
-.btn-primary { background: var(--primary-color); }
-.btn-primary:hover { background: var(--primary-hover); }
+.pp-nav-btn-first:hover,
+.pp-nav-btn-last:hover {
+  background: #22c55e;
+}
+.pp-nav-btn-prev:hover,
+.pp-nav-btn-next:hover {
+  background: #3b82f6;
+}
+.pp-nav-btn-live:hover {
+  background: #9333ea;
+}
 
-.game-actions {
+.pp-nav-btn:disabled {
+  background: #334155;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Actions at bottom */
+.passplay-actions {
+  margin-top: auto;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 1rem 0;
+  flex-direction: column;
+  gap: 0.6rem;
 }
 
-.game-actions button {
-  flex: 1;
-  min-width: 120px;
-  background: var(--card-hover);
-  color: var(--text-light);
-  border: none;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  cursor: pointer;
+.pp-btn-copy {
+  background: var(--black-light);
+  color: var(--gold-light);
+  border: 1px solid var(--gold-dark);
+}
+.pp-btn-copy:hover {
+  background: var(--black);
 }
 
-.game-actions button:hover {
-  background: var(--primary-color);
+.pp-btn-resign {
+  background: #8b0000;
+  color: var(--white);
 }
-
-.btn-danger { background: var(--accent-red) !important; }
-.btn-success { background: var(--accent-green) !important; }
-
-.pgn-navigation {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-}
-
-.pgn-navigation button {
-  background: var(--card-hover);
-  color: var(--text-light);
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-}
-
-.pgn-navigation button:hover {
-  background: var(--primary-color);
-}
-.board-wrapper {
-  position: relative;
-  z-index: 10; /* Bring board to front */
-}
-
-.pgn-container {
-  position: relative;
-  z-index: 5; /* Send panels to back */
+.pp-btn-resign:hover {
+  background: #b00000;
 }

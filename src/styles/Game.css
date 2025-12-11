@@ -167,3 +167,91 @@
   border: 2px solid #FFD700;
   min-width: 300px;
 }
+/* Add to src/styles/Game.css */
+
+.menu-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 350px;
+  align-items: center;
+}
+
+.welcome-text {
+  font-size: 1.5rem;
+  color: #FFD700;
+  margin-bottom: 10px;
+}
+
+.timer-dropdown {
+  padding: 8px;
+  border-radius: 5px;
+  background: #222;
+  color: #fff;
+  border: 1px solid #FFD700;
+  margin-left: 10px;
+  cursor: pointer;
+}
+
+.room-input {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #FFD700;
+  background: #111;
+  color: #FFD700;
+  font-weight: bold;
+  text-align: center;
+  text-transform: uppercase;
+  width: 150px;
+}
+
+.divider {
+  color: #aaa;
+  margin: 10px 0;
+  font-size: 0.9rem;
+  width: 100%;
+  text-align: center;
+}
+
+.code-display {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #FFD700;
+  border: 2px dashed #FFD700;
+  padding: 1rem 2rem;
+  margin: 1rem 0;
+  cursor: pointer;
+  background: rgba(255, 215, 0, 0.1);
+  transition: all 0.3s;
+  border-radius: 8px;
+}
+
+.code-display:hover {
+  background: rgba(255, 215, 0, 0.2);
+}
+
+.status-text {
+  color: #aaa;
+  font-style: italic;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.timer-button.primary {
+  background: linear-gradient(45deg, #FFD700, #c5a028);
+  color: #000;
+  border: none;
+  font-weight: bold;
+}

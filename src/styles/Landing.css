@@ -8,6 +8,8 @@
   --white: #ffffff;
   --gray: #888888;
   --gray-light: #cccccc;
+  /* New Color for Chess960 accent */
+  --blue-accent: #3498db;
 }
 
 * {
@@ -26,7 +28,7 @@
 }
 
 .landing-page {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background: var(--black);
   color: var(--white);
   overflow-x: hidden;
@@ -650,6 +652,13 @@
   gap: 2rem;
 }
 
+/* NEW: Force 4-column layout on wide screens to fit all cards nicely */
+@media (min-width: 1300px) {
+  .feature-cards {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 .feature-card {
   position: relative;
   padding: 3rem 2.5rem;
@@ -726,6 +735,32 @@
   box-shadow: 0 8px 32px rgba(212, 175, 55, 0.4);
 }
 
+/* --- NEW STYLING FOR CHESS960 CARD --- */
+
+.feature-card.feature-card-960 {
+  background: var(--black-lighter); /* Slightly different base */
+}
+
+.feature-card.feature-card-960 .feature-icon {
+  /* Use a distinct color for 960 to differentiate it */
+  color: var(--blue-accent);
+  border-color: rgba(52, 152, 219, 0.5); /* Blue border */
+  background: linear-gradient(135deg, rgba(52, 152, 219, 0.1) 0%, rgba(52, 152, 219, 0.05) 100%);
+}
+
+.feature-card.feature-card-960:hover {
+  border-color: var(--blue-accent);
+  box-shadow: 0 20px 60px rgba(52, 152, 219, 0.4);
+}
+
+.feature-card.feature-card-960:hover .feature-icon {
+  background: linear-gradient(135deg, var(--blue-accent) 0%, #5dade2 100%);
+  color: var(--black);
+  box-shadow: 0 8px 32px rgba(52, 152, 219, 0.5);
+}
+
+/* -------------------------------------- */
+
 .feature-card h3 {
   font-size: 1.75rem;
   font-weight: 700;
@@ -736,6 +771,10 @@
 
 .feature-card:hover h3 {
   color: var(--gold);
+}
+
+.feature-card.feature-card-960:hover h3 {
+  color: var(--blue-accent); /* Keep 960 title blue on hover */
 }
 
 .feature-card p {

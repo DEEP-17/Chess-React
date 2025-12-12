@@ -9,7 +9,7 @@ import Evaluate from './pages/Evaluate';
 import SignIn from './pages/SignIn';
 import Rules from './pages/Rules';
 import Profile from './pages/Profile';
-
+import PassAndPlay960 from './pages/PassAndPlay960';
 function App() {
   return (
     <Router>
@@ -22,6 +22,7 @@ function App() {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/rules" element={<Rules />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/PassAndPlay960" element={<PassAndPlay960 />} />
       </Routes>
     </Router>
   );

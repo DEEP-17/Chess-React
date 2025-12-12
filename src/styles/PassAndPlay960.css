@@ -1,0 +1,281 @@
+:root {
+  --gold: #d4af37;
+  --gold-light: #f4d03f;
+  --gold-dark: #b8941f;
+  --black: #0a0a0a;
+  --black-light: #1a1a1a;
+  --black-lighter: #2a2a2a;
+  --white: #ffffff;
+  --gray: #888888;
+  --gray-light: #cccccc;
+}
+
+/* Root */
+.passplay-root {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--black) 0%, var(--black-light) 100%);
+  color: var(--gray-light);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 1rem 1rem;
+}
+
+/* Title - Adjusted font size for the longer 960 title */
+.passplay-title {
+  font-size: 1.8rem; /* Slightly smaller font size */
+  margin-bottom: 0.5rem;
+  background: linear-gradient(45deg, var(--gold), var(--gold-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+}
+
+/* Main layout */
+.passplay-main {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  max-width: 1200px;
+}
+
+/* Board card */
+.passplay-board-card {
+  background: var(--black-lighter);
+  padding: 0.75rem;
+  border-radius: 1rem;
+  border: 1px solid var(--gold-dark);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Clocks */
+.passplay-clocks {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  width: 600px;
+  justify-content: space-between;
+}
+
+.pp-clock {
+  padding: 0.55rem 0.9rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  flex: 1;
+  transition: 0.3s;
+}
+
+.pp-clock-white {
+  background: var(--white);
+  color: var(--black);
+  border: 2px solid var(--gold-dark);
+}
+
+.pp-clock-black {
+  background: var(--black);
+  color: var(--white);
+  border: 2px solid var(--gold-dark);
+}
+
+.pp-clock-active-white,
+.pp-clock-active-black {
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+  border-color: var(--gold);
+}
+
+/* Board wrapper: keep full 600x600 */
+.passplay-board-wrapper {
+  width: 600px;
+  height: 600px;
+}
+
+/* Sidebar */
+.passplay-sidebar {
+  background: var(--black-lighter);
+  padding: 0.9rem;
+  border-radius: 1rem;
+  border: 1px solid var(--gold-dark);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
+  min-width: 320px;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sidebar time controls */
+.passplay-sidebar-controls {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.passplay-time-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.passplay-time-label {
+  font-size: 0.8rem;
+  color: var(--gray-light);
+}
+
+.passplay-time-input-field {
+  width: 80px;
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.4rem;
+  border: 1px solid var(--gold-dark);
+  background: var(--black);
+  color: var(--white);
+  font-size: 0.85rem;
+}
+
+.passplay-time-input-field:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Buttons */
+.pp-btn,
+.pp-btn-small,
+.pp-btn-action {
+  padding: 0.55rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Start/Restart button */
+.pp-btn-primary {
+  background: var(--gold);
+  color: var(--black);
+  white-space: nowrap;
+}
+.pp-btn-primary:hover {
+  background: var(--gold-light);
+}
+
+/* PGN box */
+.passplay-pgn-box {
+  background: var(--black);
+  padding: 0.7rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--gold-dark);
+  font-family: "Courier New", monospace;
+  height: 200px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+}
+
+/* Nav buttons row */
+.passplay-nav-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+/* Small nav buttons */
+.pp-btn-small {
+  font-size: 0.85rem;
+}
+
+/* You can keep your existing nav color styles or adjust them here */
+.pp-nav-btn-first,
+.pp-nav-btn-last {
+  background: #4ade80;
+}
+
+.pp-nav-btn-prev,
+.pp-nav-btn-next {
+  background: #60a5fa;
+}
+
+.pp-nav-btn-live {
+  background: #a855f7;
+  color: white;
+}
+
+.pp-nav-btn-first:hover,
+.pp-nav-btn-last:hover {
+  background: #22c55e;
+}
+.pp-nav-btn-prev:hover,
+.pp-nav-btn-next:hover {
+  background: #3b82f6;
+}
+.pp-nav-btn-live:hover {
+  background: #9333ea;
+}
+
+.pp-nav-btn:disabled {
+  background: #334155;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Actions at bottom */
+.passplay-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.pp-btn-copy {
+  background: var(--black-light);
+  color: var(--gold-light);
+  border: 1px solid var(--gold-dark);
+}
+.pp-btn-copy:hover {
+  background: var(--black);
+}
+
+.pp-btn-resign {
+  background: #8b0000;
+  color: var(--white);
+}
+.pp-btn-resign:hover {
+  background: #b00000;
+}
+
+/* Media Queries (Inherited and adjusted) */
+@media (max-width: 1000px) {
+  .passplay-main {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .passplay-board-card {
+    max-width: 600px; /* Ensures board wrapper stays 600px wide */
+  }
+
+  .passplay-sidebar {
+    width: 600px;
+    max-width: 600px;
+  }
+}
+
+@media (max-width: 650px) {
+  .passplay-board-wrapper,
+  .passplay-clocks,
+  .passplay-sidebar {
+    width: 100%;
+    max-width: 400px; /* Adjust size for small screens */
+  }
+  .passplay-title {
+    font-size: 1.5rem;
+  }
+}

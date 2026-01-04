@@ -13,56 +13,66 @@ const PlayStockfish = () => {
   const [isComputerThinking, setIsComputerThinking] = useState(false);
 
   // Navigation State
-  // We store the full history of FENs to allow navigation
   const [history, setHistory] = useState([new Chess().fen()]);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
 
-  // Refs for Worker Communication (Prevents stale closures)
+  // Refs
   const gameRef = useRef(game);
   const stockfish = useRef(null);
   const playerColorRef = useRef(playerColor);
   const gameActiveRef = useRef(gameActive);
 
-  // Sync refs with state
   useEffect(() => { gameRef.current = game; }, [game]);
   useEffect(() => { playerColorRef.current = playerColor; }, [playerColor]);
   useEffect(() => { gameActiveRef.current = gameActive; }, [gameActive]);
 
   // --- Initialize Stockfish Worker ---
   useEffect(() => {
-    stockfish.current = new Worker('/stockfish.js');
-    
-    stockfish.current.onmessage = (event) => {
-      const message = event.data;
-      if (message.startsWith('bestmove')) {
-        const bestMove = message.split(' ')[1];
-        if (bestMove && bestMove !== '(none)') {
-          const from = bestMove.substring(0, 2);
-          const to = bestMove.substring(2, 4);
-          const promotion = bestMove.length > 4 ? bestMove[4] : 'q';
-          
-          // Execute computer move
-          makeMove(from, to, promotion);
-          setIsComputerThinking(false);
-        }
-      }
-    };
+    // Make sure stockfish.js is in your public folder
+    try {
+      stockfish.current = new Worker('/stockfish.js');
+      
+      stockfish.current.onmessage = (event) => {
+        const message = event.data;
+        // console.log("Stockfish says:", message); // Uncomment to debug
 
-    return () => stockfish.current.terminate();
+        if (message.startsWith('bestmove')) {
+          const bestMove = message.split(' ')[1];
+          if (bestMove && bestMove !== '(none)') {
+            const from = bestMove.substring(0, 2);
+            const to = bestMove.substring(2, 4);
+            const promotion = bestMove.length > 4 ? bestMove[4] : 'q';
+            
+            makeMove(from, to, promotion);
+            setIsComputerThinking(false); // Unlocks the board
+          }
+        }
+      };
+
+      // INIT ENGINE: Important startup sequence
+      stockfish.current.postMessage('uci');
+      stockfish.current.postMessage('isready');
+    } catch (error) {
+      console.error("Could not load Stockfish worker. Ensure /stockfish.js exists in public folder.", error);
+    }
+
+    return () => {
+      if (stockfish.current) stockfish.current.terminate();
+    };
   }, []); 
 
   // --- Game Logic ---
 
   const triggerStockfish = (gameInstance) => {
     if (!stockfish.current) return;
+    
+    // Send position and ask for move
     stockfish.current.postMessage(`position fen ${gameInstance.fen()}`);
     stockfish.current.postMessage(`go depth ${difficulty}`);
   };
 
   const makeMove = useCallback((from, to, promotion = 'q') => {
-    // 1. Create a clone of the current game state to apply the move
     const gameCopy = new Chess();
-    // Load PGN to preserve move history (1. e4 e5...)
     gameCopy.loadPgn(gameRef.current.pgn()); 
 
     try {
@@ -71,12 +81,10 @@ const PlayStockfish = () => {
       if (move) {
         setGame(gameCopy);
         
-        // Update History
         const newHistory = [...history, gameCopy.fen()];
         setHistory(newHistory);
         setCurrentMoveIndex(newHistory.length - 1);
 
-        // Check Game Over
         if (gameCopy.isGameOver()) {
           setGameActive(false);
           let msg = "Game Over";
@@ -87,32 +95,27 @@ const PlayStockfish = () => {
           return;
         }
 
-        // If it's now the computer's turn, trigger it
-        // We use Refs here to ensure we read the latest active state inside callbacks
+        // Trigger Computer if needed
         if (gameActiveRef.current && gameCopy.turn() !== playerColorRef.current[0]) {
           setIsComputerThinking(true);
-          setTimeout(() => triggerStockfish(gameCopy), 500);
+          // Small delay to allow UI to render user move before engine freezes thread
+          setTimeout(() => triggerStockfish(gameCopy), 250);
         }
       }
     } catch (e) {
       console.error(e);
+      setIsComputerThinking(false); // Reset on error so game doesn't hang
     }
   }, [history, difficulty]); 
 
   const onDrop = (sourceSquare, targetSquare) => {
-    // 1. Basic checks
     if (!gameActive || isComputerThinking) return false;
-    
-    // 2. Ensure it's player's turn
     if (game.turn() !== playerColor[0]) return false;
-
-    // 3. Ensure we are in "Live" mode (not reviewing history)
     if (currentMoveIndex !== history.length - 1) {
       alert("You are reviewing past moves. Click 'Live' to play.");
       return false;
     }
 
-    // 4. Attempt Move logic (Optimistic UI update)
     const gameCopy = new Chess();
     gameCopy.loadPgn(game.pgn());
 
@@ -124,7 +127,7 @@ const PlayStockfish = () => {
       });
 
       if (move) {
-        makeMove(sourceSquare, targetSquare, 'q'); // Call main handler
+        makeMove(sourceSquare, targetSquare, 'q');
         return true;
       }
     } catch (e) { return false; }
@@ -137,14 +140,14 @@ const PlayStockfish = () => {
     const newGame = new Chess();
     setGame(newGame);
     setGameActive(true);
-    // Reset history
     const startFen = newGame.fen();
     setHistory([startFen]);
     setCurrentMoveIndex(0);
-    
     setIsComputerThinking(false);
 
-    // If player chose black, computer moves first
+    // Send 'ucinewgame' to clear hash table for a fresh start
+    if (stockfish.current) stockfish.current.postMessage('ucinewgame');
+
     if (playerColor === 'black') {
       setIsComputerThinking(true);
       setTimeout(() => triggerStockfish(newGame), 500);
@@ -157,11 +160,8 @@ const PlayStockfish = () => {
     alert("You resigned. Stockfish wins!");
   };
 
-  // --- PGN Cleaning Helper ---
   const getMovesOnly = (pgnString) => {
-    // Regex to remove [Header "Value"] blocks
     let moves = pgnString.replace(/\[.*?\]\s*/g, '').trim();
-    // Remove standalone result asterisk if it exists alone
     if (moves === "*") return "";
     return moves;
   };
@@ -177,14 +177,12 @@ const PlayStockfish = () => {
     alert("Moves copied to clipboard!");
   };
 
-  // --- Navigation Handlers ---
   const navFirst = () => setCurrentMoveIndex(0);
   const navPrev = () => setCurrentMoveIndex(prev => Math.max(0, prev - 1));
   const navNext = () => setCurrentMoveIndex(prev => Math.min(history.length - 1, prev + 1));
   const navLast = () => setCurrentMoveIndex(history.length - 1);
-  const navStop = () => setCurrentMoveIndex(history.length - 1); // Live
+  const navStop = () => setCurrentMoveIndex(history.length - 1);
 
-  // Determine display position (History vs Live)
   const displayPosition = history[currentMoveIndex] || game.fen();
 
   return (
@@ -228,17 +226,16 @@ const PlayStockfish = () => {
               position={displayPosition} 
               onPieceDrop={onDrop}
               boardOrientation={playerColor}
-              // Only allow drag if active, player's turn, and computer isn't thinking
               arePiecesDraggable={
                 gameActive && 
                 !isComputerThinking && 
-                currentMoveIndex === history.length - 1 && // Must be in live view
+                currentMoveIndex === history.length - 1 &&
                 game.turn() === playerColor[0]
               }
               animationDuration={200}
             />
           </div>
-          {isComputerThinking && <p style={{color: '#aaa', marginTop: '10px'}}>Stockfish is thinking...</p>}
+          {/* REMOVED THE "STOCKFISH IS THINKING" TEXT AS REQUESTED */}
         </div>
 
         <div className="pgn-container">

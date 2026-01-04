@@ -37,6 +37,11 @@ const Game = () => {
 
   const [gameOverResult, setGameOverResult] = useState(null);
 
+  // --- Click-to-Move & Highlighting State ---
+  const [moveFrom, setMoveFrom] = useState('');
+  const [optionSquares, setOptionSquares] = useState({});
+
+  // --- Promotion State (Required for Click-to-Move) ---
   const [showPromotionDialog, setShowPromotionDialog] = useState(false);
   const [pendingPromotion, setPendingPromotion] = useState(null);
 
@@ -82,6 +87,8 @@ const Game = () => {
       setBlackTime(t);
 
       setGame(new Chess());
+      setMoveFrom('');
+      setOptionSquares({});
       startSound.play().catch(e => {});
     });
 
@@ -90,6 +97,9 @@ const Game = () => {
       setGame(newGame);
       setWhiteTime(parseTimeString(data.whiteTime));
       setBlackTime(parseTimeString(data.blackTime));
+      
+      setMoveFrom('');
+      setOptionSquares({});
 
       if (newGame.in_check()) checkSound.play().catch(e => {});
       else moveSound.play().catch(e => {});
@@ -172,16 +182,97 @@ const Game = () => {
     return false;
   }
 
-  function onDrop(sourceSquare, targetSquare) {
-    if (!gameStarted || game.turn() !== playerColor) return false;
+  function getMoveOptions(square) {
+    if (game.turn() !== playerColor) return false;
 
-    if (isPromotionMove(sourceSquare, targetSquare)) {
-      setPendingPromotion({ from: sourceSquare, to: targetSquare });
-      setShowPromotionDialog(true);
+    const moves = game.moves({
+      square,
+      verbose: true
+    });
+
+    if (moves.length === 0) {
+      setOptionSquares({});
       return false;
     }
 
+    const newSquares = {};
+    moves.map((move) => {
+      newSquares[move.to] = {
+        background:
+          game.get(move.to) && game.get(move.to).color !== game.get(square).color
+            ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)'
+            : 'radial-gradient(circle, rgba(0,0,0,.2) 25%, transparent 25%)',
+        borderRadius: '50%'
+      };
+      return move;
+    });
+    
+    newSquares[square] = {
+      background: 'rgba(255, 255, 0, 0.4)'
+    };
+    
+    setOptionSquares(newSquares);
+    return true;
+  }
+
+  // --- Click-to-Move Handler ---
+  function onSquareClick(square) {
+    if (!gameStarted || game.turn() !== playerColor) return;
+
+    if (optionSquares[square] && moveFrom) {
+      // Check for Promotion on Click
+      if (isPromotionMove(moveFrom, square)) {
+        setPendingPromotion({ from: moveFrom, to: square });
+        setShowPromotionDialog(true); // Open custom dialog
+        return;
+      }
+      
+      executeMove(moveFrom, square);
+      return;
+    }
+
+    if (moveFrom === square) {
+      setMoveFrom('');
+      setOptionSquares({});
+      return;
+    }
+
+    const piece = game.get(square);
+    if (piece && piece.color === playerColor) {
+      setMoveFrom(square);
+      getMoveOptions(square);
+      return;
+    }
+
+    setMoveFrom('');
+    setOptionSquares({});
+  }
+
+  // --- Drag & Drop Handler ---
+  function onDrop(sourceSquare, targetSquare) {
+    if (!gameStarted || game.turn() !== playerColor) return false;
+
+    // For Drag & Drop, return 'true' if promotion to let Library show default menu
+    if (isPromotionMove(sourceSquare, targetSquare)) {
+      return true; 
+    }
+
     return executeMove(sourceSquare, targetSquare, 'q');
+  }
+
+  // --- Library Default Promotion Handler (Drag only) ---
+  function onPromotionPieceSelect(piece, sourceSquare, targetSquare) {
+    const promotionShort = piece[1].toLowerCase(); 
+    return executeMove(sourceSquare, targetSquare, promotionShort);
+  }
+
+  // --- Custom Promotion Handler (Click only) ---
+  function handleManualPromotion(pieceType) {
+    if (pendingPromotion) {
+      executeMove(pendingPromotion.from, pendingPromotion.to, pieceType);
+      setShowPromotionDialog(false);
+      setPendingPromotion(null);
+    }
   }
 
   function executeMove(sourceSquare, targetSquare, promotion = 'q') {
@@ -201,6 +292,9 @@ const Game = () => {
 
       setGame(new Chess(gameCopy.fen()));
 
+      setMoveFrom('');
+      setOptionSquares({});
+
       socket.emit('sync_state', {
         roomId,
         fen: gameCopy.fen(),
@@ -213,14 +307,6 @@ const Game = () => {
       return true;
     } catch (e) {
       return false;
-    }
-  }
-
-  function handlePromotion(piece) {
-    if (pendingPromotion) {
-      executeMove(pendingPromotion.from, pendingPromotion.to, piece);
-      setShowPromotionDialog(false);
-      setPendingPromotion(null);
     }
   }
 
@@ -372,6 +458,14 @@ const Game = () => {
                 id="BasicBoard"
                 position={game.fen()}
                 onPieceDrop={onDrop}
+                
+                // Native Promotion (Drag & Drop)
+                onPromotionPieceSelect={onPromotionPieceSelect}
+
+                // Click Handling
+                onSquareClick={onSquareClick}
+                customSquareStyles={optionSquares}
+
                 boardOrientation={playerColor === 'w' ? 'white' : 'black'}
                 customDarkSquareStyle={{ backgroundColor: boardThemes[currentTheme].dark }}
                 customLightSquareStyle={{ backgroundColor: boardThemes[currentTheme].light }}
@@ -417,24 +511,25 @@ const Game = () => {
         </div>
       )}
 
+      {/* --- Custom Promotion Modal (For Click-to-Move only) --- */}
       {showPromotionDialog && (
         <div className="modal-overlay">
           <div className="promotion-dialog">
-            <h3>Choose Promotion Piece</h3>
+            <h3>Choose Promotion</h3>
             <div className="promotion-pieces">
-              <div className="promotion-piece" onClick={() => handlePromotion('q')}>
+              <div className="promotion-piece" onClick={() => handleManualPromotion('q')}>
                 <span className="piece-icon">♛</span>
                 <span className="piece-label">Queen</span>
               </div>
-              <div className="promotion-piece" onClick={() => handlePromotion('r')}>
+              <div className="promotion-piece" onClick={() => handleManualPromotion('r')}>
                 <span className="piece-icon">♜</span>
                 <span className="piece-label">Rook</span>
               </div>
-              <div className="promotion-piece" onClick={() => handlePromotion('b')}>
+              <div className="promotion-piece" onClick={() => handleManualPromotion('b')}>
                 <span className="piece-icon">♝</span>
                 <span className="piece-label">Bishop</span>
               </div>
-              <div className="promotion-piece" onClick={() => handlePromotion('n')}>
+              <div className="promotion-piece" onClick={() => handleManualPromotion('n')}>
                 <span className="piece-icon">♞</span>
                 <span className="piece-label">Knight</span>
               </div>

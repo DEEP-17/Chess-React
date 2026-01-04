@@ -13,10 +13,15 @@ const PassAndPlay = () => {
   const [blackTime, setBlackTime] = useState(300);
   const [initialTime, setInitialTime] = useState(5);
 
-  // Navigation State
+  // Navigation & History
   const [history, setHistory] = useState([new Chess().fen()]);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
 
+  // --- NEW: Highlighting State ---
+  const [moveFrom, setMoveFrom] = useState('');
+  const [optionSquares, setOptionSquares] = useState({});
+
+  // --- Helper: Apply Move ---
   const applyMove = (from, to, promotion) => {
     try {
       const gameCopy = new Chess();
@@ -35,6 +40,10 @@ const PassAndPlay = () => {
       setHistory(newHistory);
       setCurrentMoveIndex(newHistory.length - 1);
 
+      // Clear highlights after move
+      setMoveFrom('');
+      setOptionSquares({});
+
       if (gameCopy.isGameOver()) {
         setGameActive(false);
         let result = 'Game Over';
@@ -50,6 +59,7 @@ const PassAndPlay = () => {
     }
   };
 
+  // --- Helper: Check for Promotion ---
   const isPromotionMove = (sourceSquare, targetSquare, piece) => {
     if (!piece) return false;
     const color = piece[0];
@@ -70,6 +80,71 @@ const PassAndPlay = () => {
     return false;
   };
 
+  // --- NEW: Calculate Legal Moves for Highlighting ---
+  const getMoveOptions = (square) => {
+    const moves = game.moves({
+      square,
+      verbose: true
+    });
+
+    if (moves.length === 0) {
+      setOptionSquares({});
+      return false;
+    }
+
+    const newSquares = {};
+    moves.map((move) => {
+      newSquares[move.to] = {
+        background:
+          game.get(move.to) && game.get(move.to).color !== game.get(square).color
+            ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)'
+            : 'radial-gradient(circle, rgba(0,0,0,.2) 25%, transparent 25%)',
+        borderRadius: '50%'
+      };
+      return move;
+    });
+    
+    newSquares[square] = {
+      background: 'rgba(255, 255, 0, 0.4)' // Highlight selected piece
+    };
+    
+    setOptionSquares(newSquares);
+    return true;
+  };
+
+  // --- NEW: Handle Square Click (Click-to-Move) ---
+  const onSquareClick = (square) => {
+    if (!gameActive) return;
+    if (currentMoveIndex !== history.length - 1) return;
+
+    // A. If clicking a legal move target -> Make Move
+    if (optionSquares[square] && moveFrom) {
+      // Check for promotion via click (default to Queen for simplicity in click-mode)
+      // Or handle promotion logic if needed
+      applyMove(moveFrom, square);
+      return;
+    }
+
+    // B. If clicking same square -> Deselect
+    if (moveFrom === square) {
+      setMoveFrom('');
+      setOptionSquares({});
+      return;
+    }
+
+    // C. If clicking a piece of current turn's color -> Select it
+    const piece = game.get(square);
+    if (piece && piece.color === game.turn()) {
+      setMoveFrom(square);
+      getMoveOptions(square);
+      return;
+    }
+
+    // D. Clicking empty/invalid -> Deselect
+    setMoveFrom('');
+    setOptionSquares({});
+  };
+
   const onDrop = (sourceSquare, targetSquare, piece) => {
     if (!gameActive) return false;
     if (currentMoveIndex !== history.length - 1) {
@@ -78,7 +153,6 @@ const PassAndPlay = () => {
     }
 
     if (isPromotionMove(sourceSquare, targetSquare, piece)) {
-      // Let react-chessboard show the square promotion UI
       return true;
     }
 
@@ -100,6 +174,8 @@ const PassAndPlay = () => {
     const startFen = newGame.fen();
     setHistory([startFen]);
     setCurrentMoveIndex(0);
+    setMoveFrom('');
+    setOptionSquares({});
   };
 
   const handleResign = (color) => {
@@ -181,6 +257,11 @@ const PassAndPlay = () => {
               id="PassPlayBoard"
               position={displayPosition}
               onPieceDrop={onDrop}
+              
+              // NEW: Handlers for click-to-move
+              onSquareClick={onSquareClick}
+              customSquareStyles={optionSquares}
+
               onPromotionPieceSelect={onPromotionPieceSelect}
               autoPromoteToQueen={false}
               boardOrientation={boardOrientation}

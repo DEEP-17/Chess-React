@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 
+// --- Chess960 Generator Functions ---
 const generateChess960Position = () => {
   const backRank = ['', '', '', '', '', '', '', ''];
 
@@ -57,6 +58,11 @@ const PassAndPlay960 = () => {
   const [history, setHistory] = useState([initialRandomFen]);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
 
+  // --- NEW: Highlighting State ---
+  const [moveFrom, setMoveFrom] = useState('');
+  const [optionSquares, setOptionSquares] = useState({});
+
+  // --- Helper: Apply Move ---
   const applyMove = (from, to, promotion) => {
     try {
       const gameCopy = new Chess(game.fen());
@@ -68,12 +74,15 @@ const PassAndPlay960 = () => {
       if (!move) return false;
 
       setGame(gameCopy);
-
       setBoardOrientation(gameCopy.turn() === 'w' ? 'white' : 'black');
 
       const newHistory = [...history, gameCopy.fen()];
       setHistory(newHistory);
       setCurrentMoveIndex(newHistory.length - 1);
+
+      // NEW: Clear highlights after successful move
+      setMoveFrom('');
+      setOptionSquares({});
 
       if (gameCopy.isGameOver()) {
         setGameActive(false);
@@ -108,6 +117,76 @@ const PassAndPlay960 = () => {
       return true;
     }
     return false;
+  };
+
+  // --- NEW: Calculate Legal Moves for Highlighting ---
+  const getMoveOptions = (square) => {
+    const moves = game.moves({
+      square,
+      verbose: true
+    });
+
+    if (moves.length === 0) {
+      setOptionSquares({});
+      return false;
+    }
+
+    const newSquares = {};
+    moves.map((move) => {
+      newSquares[move.to] = {
+        background:
+          game.get(move.to) && game.get(move.to).color !== game.get(square).color
+            ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)'
+            : 'radial-gradient(circle, rgba(0,0,0,.2) 25%, transparent 25%)',
+        borderRadius: '50%'
+      };
+      return move;
+    });
+    
+    newSquares[square] = {
+      background: 'rgba(255, 255, 0, 0.4)' // Highlight selected piece
+    };
+    
+    setOptionSquares(newSquares);
+    return true;
+  };
+
+  // --- NEW: Handle Square Click (Click-to-Move) ---
+  const onSquareClick = (square) => {
+    if (!gameActive) return;
+    if (currentMoveIndex !== history.length - 1) return;
+
+    // Check if we are clicking on a wrong turn board (optional safety)
+    if ((game.turn() === 'w' && boardOrientation === 'black') ||
+        (game.turn() === 'b' && boardOrientation === 'white')) {
+       // Ideally, we allow clicking, but if you want to strictly enforce it:
+       // return;
+    }
+
+    // A. Make Move
+    if (optionSquares[square] && moveFrom) {
+      applyMove(moveFrom, square);
+      return;
+    }
+
+    // B. Deselect
+    if (moveFrom === square) {
+      setMoveFrom('');
+      setOptionSquares({});
+      return;
+    }
+
+    // C. Select Piece
+    const piece = game.get(square);
+    if (piece && piece.color === game.turn()) {
+      setMoveFrom(square);
+      getMoveOptions(square);
+      return;
+    }
+
+    // D. Empty/Invalid click
+    setMoveFrom('');
+    setOptionSquares({});
   };
 
   const onDrop = (sourceSquare, targetSquare, piece) => {
@@ -145,6 +224,8 @@ const PassAndPlay960 = () => {
     setBlackTime(initialTime * 60);
     setHistory([startFen]);
     setCurrentMoveIndex(0);
+    setMoveFrom('');
+    setOptionSquares({});
   };
 
   const handleResign = (color) => {
@@ -175,6 +256,12 @@ const PassAndPlay960 = () => {
     setCurrentMoveIndex((prev) => Math.min(history.length - 1, prev + 1));
   const navLast = () => setCurrentMoveIndex(history.length - 1);
   const navStop = () => setCurrentMoveIndex(history.length - 1);
+
+  // Clear selection if navigating history
+  useEffect(() => {
+    setMoveFrom('');
+    setOptionSquares({});
+  }, [currentMoveIndex]);
 
   useEffect(() => {
     let interval = null;
@@ -236,6 +323,11 @@ const PassAndPlay960 = () => {
               id="PassPlay960Board"
               position={displayPosition}
               onPieceDrop={onDrop}
+              
+              // NEW: Handlers for click-to-move and styles
+              onSquareClick={onSquareClick}
+              customSquareStyles={optionSquares}
+
               onPromotionPieceSelect={onPromotionPieceSelect}
               autoPromoteToQueen={false}
               boardOrientation={boardOrientation}

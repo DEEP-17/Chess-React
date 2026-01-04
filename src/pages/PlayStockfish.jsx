@@ -16,6 +16,10 @@ const PlayStockfish = () => {
   const [history, setHistory] = useState([new Chess().fen()]);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
 
+  // --- NEW: State for Click-to-Move & Highlighting ---
+  const [moveFrom, setMoveFrom] = useState('');
+  const [optionSquares, setOptionSquares] = useState({});
+
   // Refs
   const gameRef = useRef(game);
   const stockfish = useRef(null);
@@ -28,14 +32,11 @@ const PlayStockfish = () => {
 
   // --- Initialize Stockfish Worker ---
   useEffect(() => {
-    // Make sure stockfish.js is in your public folder
     try {
       stockfish.current = new Worker('/stockfish.js');
       
       stockfish.current.onmessage = (event) => {
         const message = event.data;
-        // console.log("Stockfish says:", message); // Uncomment to debug
-
         if (message.startsWith('bestmove')) {
           const bestMove = message.split(' ')[1];
           if (bestMove && bestMove !== '(none)') {
@@ -44,16 +45,15 @@ const PlayStockfish = () => {
             const promotion = bestMove.length > 4 ? bestMove[4] : 'q';
             
             makeMove(from, to, promotion);
-            setIsComputerThinking(false); // Unlocks the board
+            setIsComputerThinking(false);
           }
         }
       };
 
-      // INIT ENGINE: Important startup sequence
       stockfish.current.postMessage('uci');
       stockfish.current.postMessage('isready');
     } catch (error) {
-      console.error("Could not load Stockfish worker. Ensure /stockfish.js exists in public folder.", error);
+      console.error("Could not load Stockfish worker.", error);
     }
 
     return () => {
@@ -65,8 +65,6 @@ const PlayStockfish = () => {
 
   const triggerStockfish = (gameInstance) => {
     if (!stockfish.current) return;
-    
-    // Send position and ask for move
     stockfish.current.postMessage(`position fen ${gameInstance.fen()}`);
     stockfish.current.postMessage(`go depth ${difficulty}`);
   };
@@ -81,6 +79,10 @@ const PlayStockfish = () => {
       if (move) {
         setGame(gameCopy);
         
+        // Reset highlights after a move is made
+        setMoveFrom('');
+        setOptionSquares({});
+
         const newHistory = [...history, gameCopy.fen()];
         setHistory(newHistory);
         setCurrentMoveIndex(newHistory.length - 1);
@@ -90,24 +92,86 @@ const PlayStockfish = () => {
           let msg = "Game Over";
           if (gameCopy.isCheckmate()) msg = `Checkmate! ${gameCopy.turn() === 'w' ? 'Black' : 'White'} wins!`;
           else if (gameCopy.isDraw()) msg = "Draw!";
-          
           setTimeout(() => alert(msg), 100);
           return;
         }
 
-        // Trigger Computer if needed
         if (gameActiveRef.current && gameCopy.turn() !== playerColorRef.current[0]) {
           setIsComputerThinking(true);
-          // Small delay to allow UI to render user move before engine freezes thread
           setTimeout(() => triggerStockfish(gameCopy), 250);
         }
       }
     } catch (e) {
       console.error(e);
-      setIsComputerThinking(false); // Reset on error so game doesn't hang
+      setIsComputerThinking(false);
     }
   }, [history, difficulty]); 
 
+  // --- NEW: Helper to calculate legal moves for highlighting ---
+  const getMoveOptions = (square) => {
+    const moves = game.moves({
+      square,
+      verbose: true
+    });
+
+    if (moves.length === 0) {
+      setOptionSquares({});
+      return false;
+    }
+
+    const newSquares = {};
+    moves.map((move) => {
+      newSquares[move.to] = {
+        background:
+          game.get(move.to) && game.get(move.to).color !== game.get(square).color
+            ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)'
+            : 'radial-gradient(circle, rgba(0,0,0,.2) 25%, transparent 25%)',
+        borderRadius: '50%'
+      };
+      return move;
+    });
+    
+    newSquares[square] = {
+      background: 'rgba(255, 255, 0, 0.4)' // Highlight selected piece
+    };
+    
+    setOptionSquares(newSquares);
+    return true;
+  };
+
+  // --- NEW: Handle Square Click (Click-to-Move) ---
+  const onSquareClick = (square) => {
+    // 1. Basic checks
+    if (!gameActive || isComputerThinking) return;
+    if (currentMoveIndex !== history.length - 1) return;
+
+    // 2. If clicking on a highlighted legal move -> Make Move
+    if (optionSquares[square] && moveFrom) {
+      makeMove(moveFrom, square);
+      return;
+    }
+
+    // 3. If clicking same square -> Deselect
+    if (moveFrom === square) {
+      setMoveFrom('');
+      setOptionSquares({});
+      return;
+    }
+
+    // 4. If clicking a piece of our color -> Select it
+    const piece = game.get(square);
+    if (piece && piece.color === playerColor[0]) {
+      setMoveFrom(square);
+      getMoveOptions(square);
+      return;
+    }
+
+    // 5. Clicking empty or enemy square (not legal move) -> Deselect
+    setMoveFrom('');
+    setOptionSquares({});
+  };
+
+  // Drag and Drop wrapper
   const onDrop = (sourceSquare, targetSquare) => {
     if (!gameActive || isComputerThinking) return false;
     if (game.turn() !== playerColor[0]) return false;
@@ -140,12 +204,12 @@ const PlayStockfish = () => {
     const newGame = new Chess();
     setGame(newGame);
     setGameActive(true);
-    const startFen = newGame.fen();
-    setHistory([startFen]);
+    setHistory([newGame.fen()]);
     setCurrentMoveIndex(0);
     setIsComputerThinking(false);
+    setMoveFrom('');
+    setOptionSquares({});
 
-    // Send 'ucinewgame' to clear hash table for a fresh start
     if (stockfish.current) stockfish.current.postMessage('ucinewgame');
 
     if (playerColor === 'black') {
@@ -226,6 +290,11 @@ const PlayStockfish = () => {
               position={displayPosition} 
               onPieceDrop={onDrop}
               boardOrientation={playerColor}
+              
+              // NEW: Add Click Handling and Custom Styles
+              onSquareClick={onSquareClick}
+              customSquareStyles={optionSquares}
+
               arePiecesDraggable={
                 gameActive && 
                 !isComputerThinking && 
@@ -235,7 +304,6 @@ const PlayStockfish = () => {
               animationDuration={200}
             />
           </div>
-          {/* REMOVED THE "STOCKFISH IS THINKING" TEXT AS REQUESTED */}
         </div>
 
         <div className="pgn-container">

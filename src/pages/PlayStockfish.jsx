@@ -16,7 +16,7 @@ const PlayStockfish = () => {
   const [history, setHistory] = useState([new Chess().fen()]);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
 
-  // --- NEW: State for Click-to-Move & Highlighting ---
+  // Click-to-Move & Highlighting
   const [moveFrom, setMoveFrom] = useState('');
   const [optionSquares, setOptionSquares] = useState({});
 
@@ -62,7 +62,6 @@ const PlayStockfish = () => {
   }, []); 
 
   // --- Game Logic ---
-
   const triggerStockfish = (gameInstance) => {
     if (!stockfish.current) return;
     stockfish.current.postMessage(`position fen ${gameInstance.fen()}`);
@@ -78,8 +77,6 @@ const PlayStockfish = () => {
       
       if (move) {
         setGame(gameCopy);
-        
-        // Reset highlights after a move is made
         setMoveFrom('');
         setOptionSquares({});
 
@@ -107,17 +104,9 @@ const PlayStockfish = () => {
     }
   }, [history, difficulty]); 
 
-  // --- NEW: Helper to calculate legal moves for highlighting ---
   const getMoveOptions = (square) => {
-    const moves = game.moves({
-      square,
-      verbose: true
-    });
-
-    if (moves.length === 0) {
-      setOptionSquares({});
-      return false;
-    }
+    const moves = game.moves({ square, verbose: true });
+    if (moves.length === 0) { setOptionSquares({}); return false; }
 
     const newSquares = {};
     moves.map((move) => {
@@ -130,49 +119,32 @@ const PlayStockfish = () => {
       };
       return move;
     });
-    
-    newSquares[square] = {
-      background: 'rgba(255, 255, 0, 0.4)' // Highlight selected piece
-    };
-    
+    newSquares[square] = { background: 'rgba(255, 255, 0, 0.4)' };
     setOptionSquares(newSquares);
     return true;
   };
 
-  // --- NEW: Handle Square Click (Click-to-Move) ---
   const onSquareClick = (square) => {
-    // 1. Basic checks
     if (!gameActive || isComputerThinking) return;
     if (currentMoveIndex !== history.length - 1) return;
 
-    // 2. If clicking on a highlighted legal move -> Make Move
     if (optionSquares[square] && moveFrom) {
       makeMove(moveFrom, square);
       return;
     }
-
-    // 3. If clicking same square -> Deselect
-    if (moveFrom === square) {
-      setMoveFrom('');
-      setOptionSquares({});
-      return;
-    }
-
-    // 4. If clicking a piece of our color -> Select it
+    if (moveFrom === square) { setMoveFrom(''); setOptionSquares({}); return; }
     const piece = game.get(square);
     if (piece && piece.color === playerColor[0]) {
       setMoveFrom(square);
       getMoveOptions(square);
       return;
     }
-
-    // 5. Clicking empty or enemy square (not legal move) -> Deselect
-    setMoveFrom('');
-    setOptionSquares({});
+    setMoveFrom(''); setOptionSquares({});
   };
 
-  // Drag and Drop wrapper
+  // --- FIXED: Drag & Drop with Promotion Support ---
   const onDrop = (sourceSquare, targetSquare) => {
+    // 1. Basic Checks
     if (!gameActive || isComputerThinking) return false;
     if (game.turn() !== playerColor[0]) return false;
     if (currentMoveIndex !== history.length - 1) {
@@ -180,16 +152,21 @@ const PlayStockfish = () => {
       return false;
     }
 
+    // 2. Detect Promotion
+    // We check all legal moves to see if this specific move results in a promotion
+    const moves = game.moves({ verbose: true });
+    const isPromotion = moves.some(
+      (m) => m.from === sourceSquare && m.to === targetSquare && m.promotion
+    );
+
+    // 3. If Promotion -> Return true (Shows Menu) -> Do NOT make move yet
+    if (isPromotion) return true;
+
+    // 4. Normal Move -> Execute immediately
     const gameCopy = new Chess();
     gameCopy.loadPgn(game.pgn());
-
     try {
-      const move = gameCopy.move({
-        from: sourceSquare,
-        to: targetSquare,
-        promotion: 'q'
-      });
-
+      const move = gameCopy.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
       if (move) {
         makeMove(sourceSquare, targetSquare, 'q');
         return true;
@@ -198,8 +175,14 @@ const PlayStockfish = () => {
     return false;
   };
 
-  // --- Controls ---
+  // --- NEW: Handle Promotion Selection ---
+  const onPromotionPieceSelect = (piece, source, target) => {
+    const promotion = piece[1].toLowerCase(); // "wN" -> "n"
+    makeMove(source, target, promotion);
+    return true;
+  };
 
+  // --- Controls ---
   const startGame = () => {
     const newGame = new Chess();
     setGame(newGame);
@@ -209,9 +192,7 @@ const PlayStockfish = () => {
     setIsComputerThinking(false);
     setMoveFrom('');
     setOptionSquares({});
-
     if (stockfish.current) stockfish.current.postMessage('ucinewgame');
-
     if (playerColor === 'black') {
       setIsComputerThinking(true);
       setTimeout(() => triggerStockfish(newGame), 500);
@@ -224,19 +205,15 @@ const PlayStockfish = () => {
     alert("You resigned. Stockfish wins!");
   };
 
-  const getMovesOnly = (pgnString) => {
-    let moves = pgnString.replace(/\[.*?\]\s*/g, '').trim();
+  const getCleanPgnDisplay = () => {
+    if (history.length <= 1) return "Moves will appear here...";
+    let moves = game.pgn().replace(/\[.*?\]\s*/g, '').trim();
     if (moves === "*") return "";
     return moves;
   };
 
-  const getCleanPgnDisplay = () => {
-    if (history.length <= 1) return "Moves will appear here...";
-    return getMovesOnly(game.pgn());
-  };
-
   const handleCopyPgn = () => {
-    const cleanPgn = getMovesOnly(game.pgn());
+    const cleanPgn = getCleanPgnDisplay();
     navigator.clipboard.writeText(cleanPgn);
     alert("Moves copied to clipboard!");
   };
@@ -251,82 +228,93 @@ const PlayStockfish = () => {
 
   return (
     <div className="stockfish-container">
-      <h1>Play Chess Against Stockfish</h1>
+      
+      {/* LEFT: Board */}
+      <div className="board-wrapper">
+        <Chessboard 
+          position={displayPosition} 
+          onPieceDrop={onDrop}
+          
+          // NEW: Added this prop to handle the selection
+          onPromotionPieceSelect={onPromotionPieceSelect}
 
-      <div className="controls">
-        <div className="control-group">
-          <label>Choose Color</label>
-          <select 
-            value={playerColor} 
-            onChange={(e) => setPlayerColor(e.target.value)}
-            disabled={gameActive}
-          >
-            <option value="white">White</option>
-            <option value="black">Black</option>
-          </select>
-        </div>
-        <div className="control-group">
-          <label>Difficulty</label>
-          <select 
-            value={difficulty} 
-            onChange={(e) => setDifficulty(parseInt(e.target.value))}
-            disabled={gameActive}
-          >
-            <option value="1">Beginner</option>
-            <option value="5">Intermediate</option>
-            <option value="10">Advanced</option>
-            <option value="15">Expert</option>
-          </select>
-        </div>
-        <button className="btn btn-primary" onClick={startGame}>
-          {gameActive ? 'Restart Game' : 'Start New Game'}
-        </button>
+          boardOrientation={playerColor}
+          onSquareClick={onSquareClick}
+          customSquareStyles={optionSquares}
+          arePiecesDraggable={
+            gameActive && 
+            !isComputerThinking && 
+            currentMoveIndex === history.length - 1 &&
+            game.turn() === playerColor[0]
+          }
+          animationDuration={200}
+        />
       </div>
 
-      <div className="main-section">
-        <div className="board-wrapper">
-          <div style={{ width: '500px', height: '500px' }}>
-            <Chessboard 
-              position={displayPosition} 
-              onPieceDrop={onDrop}
-              boardOrientation={playerColor}
-              
-              // NEW: Add Click Handling and Custom Styles
-              onSquareClick={onSquareClick}
-              customSquareStyles={optionSquares}
-
-              arePiecesDraggable={
-                gameActive && 
-                !isComputerThinking && 
-                currentMoveIndex === history.length - 1 &&
-                game.turn() === playerColor[0]
-              }
-              animationDuration={200}
-            />
-          </div>
+      {/* RIGHT: Sidebar */}
+      <div className="sidebar">
+        
+        <div className="sidebar-header">
+          <h1>Stockfish</h1>
         </div>
 
-        <div className="pgn-container">
-          <div className="pgn-display" style={{ whiteSpace: 'pre-wrap' }}>
+        {/* Controls Panel */}
+        <div className="controls-panel">
+          <div className="controls-row">
+            <div className="control-group">
+              <label>Color</label>
+              <select 
+                value={playerColor} 
+                onChange={(e) => setPlayerColor(e.target.value)}
+                disabled={gameActive}
+              >
+                <option value="white">White</option>
+                <option value="black">Black</option>
+              </select>
+            </div>
+            <div className="control-group">
+              <label>Skill Level</label>
+              <select 
+                value={difficulty} 
+                onChange={(e) => setDifficulty(parseInt(e.target.value))}
+                disabled={gameActive}
+              >
+                <option value="1">Beginner</option>
+                <option value="5">Intermediate</option>
+                <option value="10">Advanced</option>
+                <option value="15">Expert</option>
+              </select>
+            </div>
+          </div>
+          <button className="btn btn-primary" onClick={startGame}>
+            {gameActive ? 'Restart Game' : 'Start New Game'}
+          </button>
+        </div>
+
+        {/* PGN Panel */}
+        <div className="pgn-panel">
+          <label>Game History</label>
+          <div className="pgn-display">
             {getCleanPgnDisplay()}
           </div>
           
-          <div className="pgn-navigation" style={{ marginBottom: '10px' }}>
+          <div className="pgn-navigation">
             <button onClick={navFirst} disabled={currentMoveIndex === 0}>|◀</button>
             <button onClick={navPrev} disabled={currentMoveIndex === 0}>◀</button>
-            <button onClick={navStop} title="Return to Live Game">Live</button>
+            <button onClick={navStop} title="Live">Live</button>
             <button onClick={navNext} disabled={currentMoveIndex === history.length - 1}>▶</button>
             <button onClick={navLast} disabled={currentMoveIndex === history.length - 1}>▶|</button>
           </div>
 
-          <div className="game-actions" style={{display: 'flex', gap: '10px', flexWrap: 'wrap'}}>
-             <button className="btn" style={{flex: 1}} onClick={handleCopyPgn}>Copy PGN</button>
-             <button className="btn btn-danger" style={{flex: 1}} onClick={handleResign} disabled={!gameActive}>
+          <div className="action-buttons">
+             <button className="btn btn-secondary" onClick={handleCopyPgn}>Copy PGN</button>
+             <button className="btn btn-danger" onClick={handleResign} disabled={!gameActive}>
                Resign
              </button>
           </div>
         </div>
       </div>
+
     </div>
   );
 };

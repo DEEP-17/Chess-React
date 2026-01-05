@@ -17,7 +17,7 @@ const PassAndPlay = () => {
   const [history, setHistory] = useState([new Chess().fen()]);
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
 
-  // --- NEW: Highlighting State ---
+  // Highlighting State
   const [moveFrom, setMoveFrom] = useState('');
   const [optionSquares, setOptionSquares] = useState({});
 
@@ -80,7 +80,7 @@ const PassAndPlay = () => {
     return false;
   };
 
-  // --- NEW: Calculate Legal Moves for Highlighting ---
+  // --- Calculate Legal Moves for Highlighting ---
   const getMoveOptions = (square) => {
     const moves = game.moves({
       square,
@@ -112,16 +112,15 @@ const PassAndPlay = () => {
     return true;
   };
 
-  // --- NEW: Handle Square Click (Click-to-Move) ---
+  // --- Handle Square Click (Click-to-Move) ---
   const onSquareClick = (square) => {
     if (!gameActive) return;
     if (currentMoveIndex !== history.length - 1) return;
 
     // A. If clicking a legal move target -> Make Move
     if (optionSquares[square] && moveFrom) {
-      // Check for promotion via click (default to Queen for simplicity in click-mode)
-      // Or handle promotion logic if needed
-      applyMove(moveFrom, square);
+      // For click-to-move, default to Queen (library limitation) or add custom modal later
+      applyMove(moveFrom, square, 'q'); 
       return;
     }
 
@@ -145,6 +144,7 @@ const PassAndPlay = () => {
     setOptionSquares({});
   };
 
+  // --- Drag and Drop ---
   const onDrop = (sourceSquare, targetSquare, piece) => {
     if (!gameActive) return false;
     if (currentMoveIndex !== history.length - 1) {
@@ -160,7 +160,7 @@ const PassAndPlay = () => {
   };
 
   const onPromotionPieceSelect = (piece, fromSquare, toSquare) => {
-    const promotionType = piece[1].toLowerCase(); // 'q','r','b','n'
+    const promotionType = piece[1].toLowerCase(); 
     return applyMove(fromSquare, toSquare, promotionType);
   };
 
@@ -184,26 +184,21 @@ const PassAndPlay = () => {
     alert(`${color} resigns!`);
   };
 
-  const getMovesOnly = (pgnString) => {
-    return pgnString.replace(/\[.*?\]\s*/g, '').trim();
-  };
-
   const getCleanPgnDisplay = () => {
     if (history.length <= 1) return 'Moves will appear here...';
-    return getMovesOnly(game.pgn());
+    // Clean regex to just show numbers and moves
+    return game.pgn().replace(/\[.*?\]\s*/g, '').trim();
   };
 
   const handleCopyPgn = () => {
-    const cleanPgn = getMovesOnly(game.pgn());
+    const cleanPgn = getCleanPgnDisplay();
     navigator.clipboard.writeText(cleanPgn);
     alert('Moves copied to clipboard!');
   };
 
   const navFirst = () => setCurrentMoveIndex(0);
-  const navPrev = () =>
-    setCurrentMoveIndex((prev) => Math.max(0, prev - 1));
-  const navNext = () =>
-    setCurrentMoveIndex((prev) => Math.min(history.length - 1, prev + 1));
+  const navPrev = () => setCurrentMoveIndex((prev) => Math.max(0, prev - 1));
+  const navNext = () => setCurrentMoveIndex((prev) => Math.min(history.length - 1, prev + 1));
   const navLast = () => setCurrentMoveIndex(history.length - 1);
   const navStop = () => setCurrentMoveIndex(history.length - 1);
 
@@ -231,23 +226,13 @@ const PassAndPlay = () => {
       <h1 className="passplay-title">Pass and Play</h1>
 
       <div className="passplay-main">
+        {/* LEFT: Board and Clocks */}
         <div className="passplay-board-card">
           <div className="passplay-clocks">
-            <div
-              className={
-                'pp-clock pp-clock-white ' +
-                (game.turn() === 'w' ? 'pp-clock-active-white' : '')
-              }
-            >
+            <div className={'pp-clock pp-clock-white ' + (game.turn() === 'w' ? 'pp-clock-active-white' : '')}>
               ⚪ White: {formatTime(whiteTime)}
             </div>
-
-            <div
-              className={
-                'pp-clock pp-clock-black ' +
-                (game.turn() === 'b' ? 'pp-clock-active-black' : '')
-              }
-            >
+            <div className={'pp-clock pp-clock-black ' + (game.turn() === 'b' ? 'pp-clock-active-black' : '')}>
               ⚫ Black: {formatTime(blackTime)}
             </div>
           </div>
@@ -257,109 +242,53 @@ const PassAndPlay = () => {
               id="PassPlayBoard"
               position={displayPosition}
               onPieceDrop={onDrop}
-              
-              // NEW: Handlers for click-to-move
               onSquareClick={onSquareClick}
               customSquareStyles={optionSquares}
-
               onPromotionPieceSelect={onPromotionPieceSelect}
               autoPromoteToQueen={false}
               boardOrientation={boardOrientation}
-              arePiecesDraggable={
-                gameActive && currentMoveIndex === history.length - 1
-              }
+              arePiecesDraggable={gameActive && currentMoveIndex === history.length - 1}
               animationDuration={200}
             />
           </div>
         </div>
 
+        {/* RIGHT: Sidebar */}
         <div className="passplay-sidebar">
-          {/* ⏱ Time controls now inside sidebar */}
+          {/* 1. Time Control & Start */}
           <div className="passplay-sidebar-controls">
             <div className="passplay-time-input">
               <label className="passplay-time-label">Time (min):</label>
               <input
                 type="number"
                 value={initialTime}
-                onChange={(e) =>
-                  setInitialTime(Math.max(1, parseInt(e.target.value) || 1))
-                }
+                onChange={(e) => setInitialTime(Math.max(1, parseInt(e.target.value) || 1))}
                 disabled={gameActive}
                 className="passplay-time-input-field"
               />
             </div>
-            <button
-              onClick={startGame}
-              className="pp-btn pp-btn-primary"
-            >
+            <button onClick={startGame} className="pp-btn pp-btn-primary">
               {gameActive ? 'Restart Game' : 'Start New Game'}
             </button>
           </div>
 
+          {/* 2. PGN Box (Flex Grow) */}
           <div className="passplay-pgn-box">{getCleanPgnDisplay()}</div>
 
+          {/* 3. Navigation */}
           <div className="passplay-nav-buttons">
-            <button
-              onClick={navFirst}
-              disabled={currentMoveIndex === 0}
-              className="pp-btn-small pp-nav-btn pp-nav-btn-first"
-            >
-              |◀
-            </button>
-
-            <button
-              onClick={navPrev}
-              disabled={currentMoveIndex === 0}
-              className="pp-btn-small pp-nav-btn pp-nav-btn-prev"
-            >
-              ◀
-            </button>
-
-            <button
-              onClick={navStop}
-              className="pp-btn-small pp-nav-btn pp-nav-btn-live"
-            >
-              Live
-            </button>
-
-            <button
-              onClick={navNext}
-              disabled={currentMoveIndex === history.length - 1}
-              className="pp-btn-small pp-nav-btn pp-nav-btn-next"
-            >
-              ▶
-            </button>
-
-            <button
-              onClick={navLast}
-              disabled={currentMoveIndex === history.length - 1}
-              className="pp-btn-small pp-nav-btn pp-nav-btn-last"
-            >
-              ▶|
-            </button>
+            <button onClick={navFirst} disabled={currentMoveIndex === 0} className="pp-btn-small pp-nav-btn pp-nav-btn-first">|◀</button>
+            <button onClick={navPrev} disabled={currentMoveIndex === 0} className="pp-btn-small pp-nav-btn pp-nav-btn-prev">◀</button>
+            <button onClick={navStop} className="pp-btn-small pp-nav-btn pp-nav-btn-live">Live</button>
+            <button onClick={navNext} disabled={currentMoveIndex === history.length - 1} className="pp-btn-small pp-nav-btn pp-nav-btn-next">▶</button>
+            <button onClick={navLast} disabled={currentMoveIndex === history.length - 1} className="pp-btn-small pp-nav-btn pp-nav-btn-last">▶|</button>
           </div>
 
+          {/* 4. Actions */}
           <div className="passplay-actions">
-            <button
-              onClick={handleCopyPgn}
-              className="pp-btn-action pp-btn-copy"
-            >
-              Copy Moves
-            </button>
-
-            <button
-              onClick={() => handleResign('White')}
-              className="pp-btn-action pp-btn-resign"
-            >
-              White Resign
-            </button>
-
-            <button
-              onClick={() => handleResign('Black')}
-              className="pp-btn-action pp-btn-resign"
-            >
-              Black Resign
-            </button>
+            <button onClick={handleCopyPgn} className="pp-btn-action pp-btn-copy">Copy Moves</button>
+            <button onClick={() => handleResign('White')} className="pp-btn-action pp-btn-resign">White Resign</button>
+            <button onClick={() => handleResign('Black')} className="pp-btn-action pp-btn-resign">Black Resign</button>
           </div>
         </div>
       </div>

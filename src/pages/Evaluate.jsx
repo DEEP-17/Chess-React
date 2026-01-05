@@ -9,184 +9,159 @@ const Evaluate = () => {
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
   const [history, setHistory] = useState([]);
   
-  // Selection & Highlighting State
+  // Highlighting & Analysis State
   const [moveFrom, setMoveFrom] = useState('');
   const [optionSquares, setOptionSquares] = useState({});
   const [isViewingHistory, setIsViewingHistory] = useState(false);
-  
-  // Analysis State
-  const [evalScore, setEvalScore] = useState(0); // 0 is equal, + is white advantage
-  const [mateScore, setMateScore] = useState(null); // Moves to mate
-  const [bestLine, setBestLine] = useState('');
+  const [engineLines, setEngineLines] = useState([]); 
+  const [aiMessage, setAiMessage] = useState("Ready to analyze!");
   
   const stockfish = useRef(null);
 
-  // 1. Initialize Stockfish Worker
+  // --- Stockfish Initialization (Same as before) ---
   useEffect(() => {
     try {
       stockfish.current = new Worker('/stockfish.js');
-      
       stockfish.current.onmessage = (event) => {
         const message = event.data;
-        
-        // Parse "score cp" or "score mate"
-        if (message.startsWith('info') && message.includes('score')) {
+        if (message.startsWith('info') && message.includes('score') && message.includes('pv')) {
+          const multipvMatch = message.match(/multipv (\d+)/);
+          const lineIndex = multipvMatch ? parseInt(multipvMatch[1]) : 1;
+          
+          let scoreDisplay = "";
+          let rawScoreVal = 0;
           const cpMatch = message.match(/score cp (-?\d+)/);
           const mateMatch = message.match(/score mate (-?\d+)/);
 
-          if (cpMatch) {
+          if (mateMatch) {
+            const moves = parseInt(mateMatch[1]);
+            scoreDisplay = `M${Math.abs(moves)}`;
+            rawScoreVal = moves > 0 ? 10000 : -10000; 
+          } else if (cpMatch) {
             const cp = parseInt(cpMatch[1]);
-            const score = game.turn() === 'w' ? cp : -cp;
-            setEvalScore(score / 100);
-            setMateScore(null);
-          } else if (mateMatch) {
-            const mate = parseInt(mateMatch[1]);
-            setMateScore(mate);
+            const normalized = game.turn() === 'w' ? cp : -cp;
+            rawScoreVal = normalized;
+            scoreDisplay = (normalized / 100).toFixed(2);
+            if (parseFloat(scoreDisplay) > 0) scoreDisplay = "+" + scoreDisplay;
           }
-        }
 
-        // Parse "pv" (Principal Variation)
-        if (message.startsWith('info') && message.includes('pv')) {
           const pvMatch = message.match(/ pv (.+)/);
-          if (pvMatch) {
-            setBestLine(pvMatch[1]);
-          }
+          const pv = pvMatch ? pvMatch[1] : "";
+
+          setEngineLines(prev => {
+            const newLines = [...prev];
+            while(newLines.length < 3) newLines.push({ id: newLines.length+1, score: "...", pv: "" });
+            newLines[lineIndex - 1] = { id: lineIndex, score: scoreDisplay, rawScore: rawScoreVal, pv: pv };
+            return newLines;
+          });
         }
       };
-      
       stockfish.current.postMessage('uci');
+      stockfish.current.postMessage('setoption name MultiPV value 3'); 
       stockfish.current.postMessage('isready');
-    } catch (error) {
-      console.error("Stockfish failed to load", error);
-    }
+    } catch (error) { console.error(error); }
+    return () => { if (stockfish.current) stockfish.current.terminate(); };
+  }, []);
 
-    return () => {
-      if (stockfish.current) stockfish.current.terminate();
-    };
-  }, []); // Run once on mount
-
-  // 2. Trigger Analysis when board updates
+  // Trigger Analysis
   useEffect(() => {
     if (stockfish.current) {
+      setEngineLines([]); 
+      setAiMessage("Thinking...");
       stockfish.current.postMessage('stop');
       stockfish.current.postMessage(`position fen ${game.fen()}`);
       stockfish.current.postMessage('go depth 15');
     }
   }, [game]);
 
-  // --- Helper: Make a move safely ---
-  function safeGameMutate(modify) {
-    setGame((g) => {
-      const update = new Chess(g.fen());
-      modify(update);
-      return update;
-    });
-  }
-
-  // --- Helper: Calculate Legal Moves for Highlighting ---
-  function getMoveOptions(square) {
-    const moves = game.moves({
-      square,
-      verbose: true
-    });
-
-    if (moves.length === 0) {
-      setOptionSquares({});
-      return false;
+  // AI Message Update
+  useEffect(() => {
+    if (engineLines.length > 0) {
+      const score = engineLines[0].rawScore;
+      let msg = "";
+      if (score > 500) msg = "White is winning decisively!";
+      else if (score < -500) msg = "Black is winning decisively!";
+      else if (score > 100) msg = "White has a clear advantage.";
+      else if (score < -100) msg = "Black has a clear advantage.";
+      else msg = "The position is balanced.";
+      setAiMessage(msg);
     }
+  }, [engineLines]);
 
+  // --- Handlers ---
+  
+  // 1. Helper to update game state safely
+  const makeMove = (move) => {
+    const gameCopy = new Chess(game.fen());
+    const result = gameCopy.move(move);
+    if (result) {
+      setGame(gameCopy);
+      setHistory(gameCopy.history());
+      setCurrentMoveIndex(prev => prev + 1);
+      setMoveFrom('');
+      setOptionSquares({});
+      return true;
+    }
+    return false;
+  };
+
+  function getMoveOptions(square) {
+    const moves = game.moves({ square, verbose: true });
+    if (moves.length === 0) { setOptionSquares({}); return false; }
     const newSquares = {};
     moves.map((move) => {
       newSquares[move.to] = {
-        background:
-          game.get(move.to) && game.get(move.to).color !== game.get(square).color
+        background: game.get(move.to) && game.get(move.to).color !== game.get(square).color
             ? 'radial-gradient(circle, rgba(0,0,0,.1) 85%, transparent 85%)'
             : 'radial-gradient(circle, rgba(0,0,0,.2) 25%, transparent 25%)',
         borderRadius: '50%'
       };
       return move;
     });
-    
-    newSquares[square] = {
-      background: 'rgba(255, 255, 0, 0.4)' // Highlight selected piece
-    };
-    
+    newSquares[square] = { background: 'rgba(255, 255, 0, 0.4)' };
     setOptionSquares(newSquares);
     return true;
   }
 
-  // 3. Handle Board Moves (Drag & Drop)
-  function onDrop(sourceSquare, targetSquare) {
+  // 2. Drag and Drop Handler
+  function onDrop(source, target) {
     if (isViewingHistory) return false;
 
-    try {
-      const gameCopy = new Chess(game.fen());
-      const move = gameCopy.move({
-        from: sourceSquare,
-        to: targetSquare,
-        promotion: 'q',
-      });
+    // Check if this is a promotion move
+    const moves = game.moves({ verbose: true });
+    const isPromotion = moves.some(m => m.from === source && m.to === target && m.promotion);
 
-      if (move === null) return false;
+    // If it is a promotion, return true immediately so the Library shows the menu.
+    // We do NOT execute the move yet.
+    if (isPromotion) return true;
 
-      setGame(gameCopy);
-      setHistory(gameCopy.history());
-      setCurrentMoveIndex(prev => prev + 1);
-      
-      // Clear highlights
-      setMoveFrom('');
-      setOptionSquares({});
-      
-      return true;
-    } catch (error) {
-      return false;
-    }
+    // Normal move (default to queen just in case, though isPromotion catches it)
+    return makeMove({ from: source, to: target, promotion: 'q' });
   }
 
-  // 4. Handle Click-to-Move
+  // 3. Promotion Handler (Called by Library after selection)
+  function onPromotionPieceSelect(piece, source, target) {
+    const promotion = piece[1].toLowerCase(); // e.g. "wN" -> "n"
+    makeMove({ from: source, to: target, promotion: promotion });
+    return true;
+  }
+
+  // 4. Click Handler
   function onSquareClick(square) {
     if (isViewingHistory) return;
 
-    // A. If clicking a legal move target -> Make Move
     if (optionSquares[square] && moveFrom) {
-      const gameCopy = new Chess(game.fen());
-      const move = gameCopy.move({
-        from: moveFrom,
-        to: square,
-        promotion: 'q'
-      });
-
-      if (move) {
-        setGame(gameCopy);
-        setHistory(gameCopy.history());
-        setCurrentMoveIndex(prev => prev + 1);
-        setMoveFrom('');
-        setOptionSquares({});
-        return;
-      }
-    }
-
-    // B. If clicking same square -> Deselect
-    if (moveFrom === square) {
-      setMoveFrom('');
-      setOptionSquares({});
+      // For click-to-move, we default to Queen because the library menu doesn't pop up on click.
+      // To support full promotion on click, you need a custom modal (like in Game.jsx).
+      makeMove({ from: moveFrom, to: square, promotion: 'q' });
       return;
     }
 
-    // C. If clicking a piece -> Select it
-    const piece = game.get(square);
-    if (piece) {
-      setMoveFrom(square);
-      getMoveOptions(square);
-      return;
-    }
-
-    // D. Clicking empty/invalid -> Deselect
-    setMoveFrom('');
-    setOptionSquares({});
+    if (moveFrom === square) { setMoveFrom(''); setOptionSquares({}); return; }
+    if (game.get(square)) { setMoveFrom(square); getMoveOptions(square); return; }
+    setMoveFrom(''); setOptionSquares({});
   }
 
-  // 5. Load PGN
   const handleLoadPGN = () => {
     try {
       const newGame = new Chess();
@@ -194,140 +169,117 @@ const Evaluate = () => {
       setGame(newGame);
       setHistory(newGame.history());
       setCurrentMoveIndex(newGame.history().length - 1);
-      setMoveFrom('');
-      setOptionSquares({});
-      setIsViewingHistory(false);
-    } catch (e) {
-      alert('Invalid PGN');
-    }
+      setMoveFrom(''); setOptionSquares({}); setIsViewingHistory(false);
+      setPgnInput('');
+    } catch { alert('Invalid PGN'); }
   };
 
-  // 6. Navigation Logic (Replaying moves)
-  const navigateToMove = (index) => {
-    const newGame = new Chess();
-    // Replay moves up to the specific index
-    for (let i = 0; i <= index; i++) {
-      if (history[i]) {
-        newGame.move(history[i]);
-      }
-    }
-    setGame(newGame);
-    setCurrentMoveIndex(index);
-    setIsViewingHistory(index < history.length - 1);
-    setMoveFrom('');
-    setOptionSquares({});
+  const navigateTo = (idx) => {
+    const g = new Chess();
+    for(let i=0; i<=idx; i++) g.move(history[i]);
+    setGame(g); setCurrentMoveIndex(idx);
+    setIsViewingHistory(idx < history.length - 1);
+    setMoveFrom(''); setOptionSquares({});
   };
 
-  const handleFirst = () => navigateToMove(-1);
-  const handlePrev = () => {
-    if (currentMoveIndex >= 0) navigateToMove(currentMoveIndex - 1);
-  };
-  const handleNext = () => {
-    if (currentMoveIndex < history.length - 1) navigateToMove(currentMoveIndex + 1);
-  };
-  const handleLast = () => navigateToMove(history.length - 1);
-
-  // 7. Calculate Bar Height (Visual)
   const getBarHeight = () => {
-    if (mateScore !== null) {
-      return mateScore > 0 ? '100%' : '0%';
-    }
-    const clampedScore = Math.max(-5, Math.min(5, evalScore));
-    const percentage = 50 + (clampedScore * 10); 
-    return `${percentage}%`;
+    const score = engineLines[0] ? engineLines[0].rawScore : 0;
+    const clamped = Math.max(-500, Math.min(500, score));
+    return `${50 + (clamped / 10)}%`;
   };
 
   return (
     <div className="evaluate-container">
-      <div className="evaluate-header">
-        <h1>Chess Analysis Board</h1>
-      </div>
-
-      <div className="input-section">
-        <textarea
-          rows="4"
-          placeholder="Paste your PGN notation here..."
-          value={pgnInput}
-          onChange={(e) => setPgnInput(e.target.value)}
-        />
-        <button onClick={handleLoadPGN}>Load PGN</button>
-      </div>
-
-      <div className="main-section">
-        <div className="board-wrapper">
-          {/* Evaluation Bar */}
-          <div className="eval-bar-container">
-            <div 
-              className="eval-bar-fill" 
-              style={{ height: getBarHeight() }}
-            >
-              <span className="eval-score">
-                {mateScore ? `M${Math.abs(mateScore)}` : evalScore.toFixed(2)}
-              </span>
-            </div>
-          </div>
-
-          {/* Chess Board */}
-          <div style={{ width: '560px', height: '560px' }}>
-            <Chessboard 
-              position={game.fen()} 
-              onPieceDrop={onDrop}
-              onSquareClick={onSquareClick}
-              arePiecesDraggable={() => !isViewingHistory}
-              boardWidth={560}
-              customDarkSquareStyle={{ backgroundColor: '#779954' }}
-              customLightSquareStyle={{ backgroundColor: '#e9edcc' }}
-              
-              // Apply the custom styles for dots and selection
-              customSquareStyles={optionSquares}
-            />
+      
+      {/* LEFT: Board Area */}
+      <div className="board-section">
+        <div className="eval-bar-container">
+          <div className="eval-bar-fill" style={{ height: getBarHeight() }}>
+            <span className="eval-score">{engineLines[0]?.score || "0.0"}</span>
           </div>
         </div>
 
-        {/* PGN & Controls */}
-        <div className="pgn-section">
-          <div className="pgn-display">
-            {history.map((move, i) => (
-              <span key={i} style={{ 
-                fontWeight: i === currentMoveIndex ? 'bold' : 'normal',
-                backgroundColor: i === currentMoveIndex ? '#4CAF50' : 'transparent',
-                padding: '0 4px'
-              }}>
-                {i % 2 === 0 ? `${Math.floor(i/2) + 1}.` : ''} {move}{' '}
+        <div className="board-wrapper">
+          <Chessboard 
+            position={game.fen()} 
+            onPieceDrop={onDrop}
+            
+            // NEW: Handle the promotion selection
+            onPromotionPieceSelect={onPromotionPieceSelect}
+
+            onSquareClick={onSquareClick}
+            arePiecesDraggable={() => !isViewingHistory}
+            customSquareStyles={optionSquares}
+            customDarkSquareStyle={{ backgroundColor: '#779954' }}
+            customLightSquareStyle={{ backgroundColor: '#e9edcc' }}
+            animationDuration={200}
+          />
+        </div>
+      </div>
+
+      {/* RIGHT: Sidebar Panels */}
+      <div className="sidebar-container">
+        
+        {/* 1. Header & Load PGN */}
+        <div className="panel header-panel">
+          <h1>Analysis</h1>
+          <div className="input-row">
+            <input 
+              placeholder="Paste PGN..." 
+              value={pgnInput}
+              onChange={e => setPgnInput(e.target.value)}
+            />
+            <button onClick={handleLoadPGN}>Load</button>
+          </div>
+        </div>
+
+        {/* 2. AI Coach */}
+        <div className="panel ai-panel">
+          <div className="ai-header"><span>🤖</span> AI Coach</div>
+          <div className="ai-message">{aiMessage}</div>
+        </div>
+
+        {/* 3. Engine Lines */}
+        <div className="panel analysis-panel">
+          <table className="engine-table">
+            <thead><tr><th>Quality</th><th>Eval</th><th>Line</th></tr></thead>
+            <tbody>
+              {[0, 1, 2].map((i) => (
+                <tr key={i}>
+                  <td className={i===0?"label-best":i===1?"label-great":"label-good"}>
+                    {i===0 ? "Best" : i===1 ? "Great" : "Good"}
+                  </td>
+                  <td>{engineLines[i]?.score || "-"}</td>
+                  <td title={engineLines[i]?.pv}>
+                    {engineLines[i]?.pv.split(' ').slice(0, 4).join(' ') || "..."}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* 4. PGN & Nav */}
+        <div className="panel pgn-panel">
+          <div className="pgn-content">
+            {history.length === 0 ? "Moves will appear here..." : history.map((m, i) => (
+              <span 
+                key={i} 
+                className={`pgn-move ${i === currentMoveIndex ? 'active' : ''}`}
+                onClick={() => navigateTo(i)}
+              >
+                {i % 2 === 0 ? `${Math.floor(i/2) + 1}.` : ''}{m}
               </span>
             ))}
-            {history.length === 0 && "Game moves will appear here..."}
           </div>
-          <div className="pgn-navigation">
-            <button onClick={handleFirst}>|◀</button>
-            <button onClick={handlePrev}>◀</button>
-            <button onClick={handleNext}>▶</button>
-            <button onClick={handleLast}>▶|</button>
+          <div className="nav-buttons">
+            <button onClick={() => navigateTo(-1)}>|◀</button>
+            <button onClick={() => currentMoveIndex >= 0 && navigateTo(currentMoveIndex - 1)}>◀</button>
+            <button onClick={() => currentMoveIndex < history.length - 1 && navigateTo(currentMoveIndex + 1)}>▶</button>
+            <button onClick={() => navigateTo(history.length - 1)}>▶|</button>
           </div>
         </div>
-      </div>
 
-      {/* Engine Analysis Output */}
-      <div className="analysis-section">
-        <h3>Engine Analysis</h3>
-        <table className="engine-analysis">
-          <thead>
-            <tr>
-              <th>Evaluation</th>
-              <th>Best Line (PV)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                {mateScore 
-                  ? `Mate in ${Math.abs(mateScore)}` 
-                  : evalScore > 0 ? `+${evalScore}` : evalScore}
-              </td>
-              <td>{bestLine}</td>
-            </tr>
-          </tbody>
-        </table>
       </div>
     </div>
   );

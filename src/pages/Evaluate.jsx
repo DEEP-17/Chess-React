@@ -18,7 +18,7 @@ const Evaluate = () => {
   
   const stockfish = useRef(null);
 
-  // --- Stockfish Initialization (Same as before) ---
+  // --- Logic (Stockfish Init) ---
   useEffect(() => {
     try {
       stockfish.current = new Worker('/stockfish.js');
@@ -89,22 +89,6 @@ const Evaluate = () => {
   }, [engineLines]);
 
   // --- Handlers ---
-  
-  // 1. Helper to update game state safely
-  const makeMove = (move) => {
-    const gameCopy = new Chess(game.fen());
-    const result = gameCopy.move(move);
-    if (result) {
-      setGame(gameCopy);
-      setHistory(gameCopy.history());
-      setCurrentMoveIndex(prev => prev + 1);
-      setMoveFrom('');
-      setOptionSquares({});
-      return true;
-    }
-    return false;
-  };
-
   function getMoveOptions(square) {
     const moves = game.moves({ square, verbose: true });
     if (moves.length === 0) { setOptionSquares({}); return false; }
@@ -123,40 +107,27 @@ const Evaluate = () => {
     return true;
   }
 
-  // 2. Drag and Drop Handler
   function onDrop(source, target) {
     if (isViewingHistory) return false;
-
-    // Check if this is a promotion move
-    const moves = game.moves({ verbose: true });
-    const isPromotion = moves.some(m => m.from === source && m.to === target && m.promotion);
-
-    // If it is a promotion, return true immediately so the Library shows the menu.
-    // We do NOT execute the move yet.
-    if (isPromotion) return true;
-
-    // Normal move (default to queen just in case, though isPromotion catches it)
-    return makeMove({ from: source, to: target, promotion: 'q' });
+    try {
+      const copy = new Chess(game.fen());
+      if (!copy.move({ from: source, to: target, promotion: 'q' })) return false;
+      setGame(copy); setHistory(copy.history()); setCurrentMoveIndex(prev => prev+1);
+      setMoveFrom(''); setOptionSquares({});
+      return true;
+    } catch { return false; }
   }
 
-  // 3. Promotion Handler (Called by Library after selection)
-  function onPromotionPieceSelect(piece, source, target) {
-    const promotion = piece[1].toLowerCase(); // e.g. "wN" -> "n"
-    makeMove({ from: source, to: target, promotion: promotion });
-    return true;
-  }
-
-  // 4. Click Handler
   function onSquareClick(square) {
     if (isViewingHistory) return;
-
     if (optionSquares[square] && moveFrom) {
-      // For click-to-move, we default to Queen because the library menu doesn't pop up on click.
-      // To support full promotion on click, you need a custom modal (like in Game.jsx).
-      makeMove({ from: moveFrom, to: square, promotion: 'q' });
-      return;
+      const copy = new Chess(game.fen());
+      if (copy.move({ from: moveFrom, to: square, promotion: 'q' })) {
+        setGame(copy); setHistory(copy.history()); setCurrentMoveIndex(prev => prev+1);
+        setMoveFrom(''); setOptionSquares({});
+        return;
+      }
     }
-
     if (moveFrom === square) { setMoveFrom(''); setOptionSquares({}); return; }
     if (game.get(square)) { setMoveFrom(square); getMoveOptions(square); return; }
     setMoveFrom(''); setOptionSquares({});
@@ -170,7 +141,7 @@ const Evaluate = () => {
       setHistory(newGame.history());
       setCurrentMoveIndex(newGame.history().length - 1);
       setMoveFrom(''); setOptionSquares({}); setIsViewingHistory(false);
-      setPgnInput('');
+      setPgnInput(''); 
     } catch { alert('Invalid PGN'); }
   };
 
@@ -189,79 +160,77 @@ const Evaluate = () => {
   };
 
   return (
-    <div className="evaluate-container">
-      
-      {/* LEFT: Board Area */}
-      <div className="board-section">
-        <div className="eval-bar-container">
-          <div className="eval-bar-fill" style={{ height: getBarHeight() }}>
-            <span className="eval-score">{engineLines[0]?.score || "0.0"}</span>
+    <div className="evaluate-root">
+      <h1 className="evaluate-title">Analysis Board</h1>
+
+      <div className="evaluate-main">
+        
+        {/* LEFT: Board Card (Board + Eval Bar) */}
+        <div className="evaluate-board-card">
+          <div className="eval-bar-container">
+            <div className="eval-bar-fill" style={{ height: getBarHeight() }}>
+              <span className="eval-score">{engineLines[0]?.score || "0.0"}</span>
+            </div>
+          </div>
+
+          <div className="evaluate-board-wrapper">
+            <Chessboard 
+              position={game.fen()} 
+              onPieceDrop={onDrop}
+              onSquareClick={onSquareClick}
+              arePiecesDraggable={() => !isViewingHistory}
+              customSquareStyles={optionSquares}
+              customDarkSquareStyle={{ backgroundColor: '#b8941f' }} /* Gold Dark */
+              customLightSquareStyle={{ backgroundColor: '#ffffff' }} /* White */
+              animationDuration={200}
+            />
           </div>
         </div>
 
-        <div className="board-wrapper">
-          <Chessboard 
-            position={game.fen()} 
-            onPieceDrop={onDrop}
-            
-            // NEW: Handle the promotion selection
-            onPromotionPieceSelect={onPromotionPieceSelect}
-
-            onSquareClick={onSquareClick}
-            arePiecesDraggable={() => !isViewingHistory}
-            customSquareStyles={optionSquares}
-            customDarkSquareStyle={{ backgroundColor: '#779954' }}
-            customLightSquareStyle={{ backgroundColor: '#e9edcc' }}
-            animationDuration={200}
-          />
-        </div>
-      </div>
-
-      {/* RIGHT: Sidebar Panels */}
-      <div className="sidebar-container">
-        
-        {/* 1. Header & Load PGN */}
-        <div className="panel header-panel">
-          <h1>Analysis</h1>
-          <div className="input-row">
+        {/* RIGHT: Sidebar */}
+        <div className="evaluate-sidebar">
+          
+          {/* 1. Input Row */}
+          <div className="evaluate-input-row">
             <input 
-              placeholder="Paste PGN..." 
+              className="evaluate-input-field"
+              placeholder="Paste PGN here..." 
               value={pgnInput}
               onChange={e => setPgnInput(e.target.value)}
             />
-            <button onClick={handleLoadPGN}>Load</button>
+            <button className="eval-btn eval-btn-primary" onClick={handleLoadPGN}>Load</button>
           </div>
-        </div>
 
-        {/* 2. AI Coach */}
-        <div className="panel ai-panel">
-          <div className="ai-header"><span>🤖</span> AI Coach</div>
-          <div className="ai-message">{aiMessage}</div>
-        </div>
+          {/* 2. AI Coach */}
+          <div className="ai-coach-box">
+            <div className="ai-header">
+              <span>🤖</span> AI Analysis
+            </div>
+            <div className="ai-message">{aiMessage}</div>
+          </div>
 
-        {/* 3. Engine Lines */}
-        <div className="panel analysis-panel">
-          <table className="engine-table">
-            <thead><tr><th>Quality</th><th>Eval</th><th>Line</th></tr></thead>
-            <tbody>
-              {[0, 1, 2].map((i) => (
-                <tr key={i}>
-                  <td className={i===0?"label-best":i===1?"label-great":"label-good"}>
-                    {i===0 ? "Best" : i===1 ? "Great" : "Good"}
-                  </td>
-                  <td>{engineLines[i]?.score || "-"}</td>
-                  <td title={engineLines[i]?.pv}>
-                    {engineLines[i]?.pv.split(' ').slice(0, 4).join(' ') || "..."}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+          {/* 3. Engine Lines Table */}
+          <div className="analysis-box">
+            <table className="engine-table">
+              <thead><tr><th>Move</th><th>Eval</th><th>Line</th></tr></thead>
+              <tbody>
+                {[0, 1, 2].map((i) => (
+                  <tr key={i}>
+                    <td className={i===0?"label-best":i===1?"label-great":"label-good"}>
+                      {i===0 ? "Best" : i===1 ? "Great" : "Good"}
+                    </td>
+                    <td>{engineLines[i]?.score || "-"}</td>
+                    <td title={engineLines[i]?.pv}>
+                      {engineLines[i]?.pv.split(' ').slice(0, 4).join(' ') || "..."}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        {/* 4. PGN & Nav */}
-        <div className="panel pgn-panel">
-          <div className="pgn-content">
+          {/* 4. PGN Display (Flexible Height) */}
+          <div className="evaluate-pgn-box">
             {history.length === 0 ? "Moves will appear here..." : history.map((m, i) => (
               <span 
                 key={i} 
@@ -272,14 +241,16 @@ const Evaluate = () => {
               </span>
             ))}
           </div>
-          <div className="nav-buttons">
-            <button onClick={() => navigateTo(-1)}>|◀</button>
-            <button onClick={() => currentMoveIndex >= 0 && navigateTo(currentMoveIndex - 1)}>◀</button>
-            <button onClick={() => currentMoveIndex < history.length - 1 && navigateTo(currentMoveIndex + 1)}>▶</button>
-            <button onClick={() => navigateTo(history.length - 1)}>▶|</button>
-          </div>
-        </div>
 
+          {/* 5. Navigation */}
+          <div className="evaluate-nav-buttons">
+            <button className="eval-nav-btn nav-first" onClick={() => navigateTo(-1)}>|◀</button>
+            <button className="eval-nav-btn nav-prev" onClick={() => currentMoveIndex >= 0 && navigateTo(currentMoveIndex - 1)}>◀</button>
+            <button className="eval-nav-btn nav-next" onClick={() => currentMoveIndex < history.length - 1 && navigateTo(currentMoveIndex + 1)}>▶</button>
+            <button className="eval-nav-btn nav-last" onClick={() => navigateTo(history.length - 1)}>▶|</button>
+          </div>
+
+        </div>
       </div>
     </div>
   );

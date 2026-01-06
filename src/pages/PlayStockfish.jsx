@@ -142,9 +142,7 @@ const PlayStockfish = () => {
     setMoveFrom(''); setOptionSquares({});
   };
 
-  // --- FIXED: Drag & Drop with Promotion Support ---
   const onDrop = (sourceSquare, targetSquare) => {
-    // 1. Basic Checks
     if (!gameActive || isComputerThinking) return false;
     if (game.turn() !== playerColor[0]) return false;
     if (currentMoveIndex !== history.length - 1) {
@@ -152,17 +150,13 @@ const PlayStockfish = () => {
       return false;
     }
 
-    // 2. Detect Promotion
-    // We check all legal moves to see if this specific move results in a promotion
     const moves = game.moves({ verbose: true });
     const isPromotion = moves.some(
       (m) => m.from === sourceSquare && m.to === targetSquare && m.promotion
     );
 
-    // 3. If Promotion -> Return true (Shows Menu) -> Do NOT make move yet
     if (isPromotion) return true;
 
-    // 4. Normal Move -> Execute immediately
     const gameCopy = new Chess();
     gameCopy.loadPgn(game.pgn());
     try {
@@ -175,14 +169,12 @@ const PlayStockfish = () => {
     return false;
   };
 
-  // --- NEW: Handle Promotion Selection ---
   const onPromotionPieceSelect = (piece, source, target) => {
-    const promotion = piece[1].toLowerCase(); // "wN" -> "n"
+    const promotion = piece[1].toLowerCase(); 
     makeMove(source, target, promotion);
     return true;
   };
 
-  // --- Controls ---
   const startGame = () => {
     const newGame = new Chess();
     setGame(newGame);
@@ -227,94 +219,93 @@ const PlayStockfish = () => {
   const displayPosition = history[currentMoveIndex] || game.fen();
 
   return (
-    <div className="stockfish-container">
-      
-      {/* LEFT: Board */}
-      <div className="board-wrapper">
-        <Chessboard 
-          position={displayPosition} 
-          onPieceDrop={onDrop}
-          
-          // NEW: Added this prop to handle the selection
-          onPromotionPieceSelect={onPromotionPieceSelect}
+    <div className="stockfish-root">
+      <h1 className="stockfish-title">Play Against Stockfish</h1>
 
-          boardOrientation={playerColor}
-          onSquareClick={onSquareClick}
-          customSquareStyles={optionSquares}
-          arePiecesDraggable={
-            gameActive && 
-            !isComputerThinking && 
-            currentMoveIndex === history.length - 1 &&
-            game.turn() === playerColor[0]
-          }
-          animationDuration={200}
-        />
-      </div>
-
-      {/* RIGHT: Sidebar */}
-      <div className="sidebar">
-        
-        <div className="sidebar-header">
-          <h1>Stockfish</h1>
-        </div>
-
-        {/* Controls Panel */}
-        <div className="controls-panel">
-          <div className="controls-row">
-            <div className="control-group">
-              <label>Color</label>
-              <select 
-                value={playerColor} 
-                onChange={(e) => setPlayerColor(e.target.value)}
-                disabled={gameActive}
-              >
-                <option value="white">White</option>
-                <option value="black">Black</option>
-              </select>
-            </div>
-            <div className="control-group">
-              <label>Skill Level</label>
-              <select 
-                value={difficulty} 
-                onChange={(e) => setDifficulty(parseInt(e.target.value))}
-                disabled={gameActive}
-              >
-                <option value="1">Beginner</option>
-                <option value="5">Intermediate</option>
-                <option value="10">Advanced</option>
-                <option value="15">Expert</option>
-              </select>
-            </div>
+      <div className="stockfish-main">
+        {/* LEFT: Board Wrapper */}
+        <div className="stockfish-board-card">
+          <div className="stockfish-board-wrapper">
+            <Chessboard 
+              position={displayPosition} 
+              onPieceDrop={onDrop}
+              onPromotionPieceSelect={onPromotionPieceSelect}
+              boardOrientation={playerColor}
+              onSquareClick={onSquareClick}
+              customSquareStyles={optionSquares}
+              arePiecesDraggable={
+                gameActive && 
+                !isComputerThinking && 
+                currentMoveIndex === history.length - 1 &&
+                game.turn() === playerColor[0]
+              }
+              animationDuration={200}
+            />
           </div>
-          <button className="btn btn-primary" onClick={startGame}>
-            {gameActive ? 'Restart Game' : 'Start New Game'}
-          </button>
         </div>
 
-        {/* PGN Panel */}
-        <div className="pgn-panel">
-          <label>Game History</label>
-          <div className="pgn-display">
+        {/* RIGHT: Sidebar */}
+        <div className="stockfish-sidebar">
+          
+          {/* Controls */}
+          <div className="stockfish-sidebar-controls">
+            <div className="sf-controls-row">
+              <div className="sf-control-group">
+                <label className="sf-label">Color</label>
+                <select 
+                  value={playerColor} 
+                  onChange={(e) => setPlayerColor(e.target.value)}
+                  disabled={gameActive}
+                  className="sf-select"
+                >
+                  <option value="white">White</option>
+                  <option value="black">Black</option>
+                </select>
+              </div>
+              <div className="sf-control-group">
+                <label className="sf-label">Skill Level</label>
+                <select 
+                  value={difficulty} 
+                  onChange={(e) => setDifficulty(parseInt(e.target.value))}
+                  disabled={gameActive}
+                  className="sf-select"
+                >
+                  <option value="1">Beginner</option>
+                  <option value="5">Intermediate</option>
+                  <option value="10">Advanced</option>
+                  <option value="15">Expert</option>
+                </select>
+              </div>
+            </div>
+            
+            <button className="sf-btn sf-btn-primary" onClick={startGame}>
+              {gameActive ? 'Restart Game' : 'Start New Game'}
+            </button>
+          </div>
+
+          {/* PGN Box */}
+          <div className="stockfish-pgn-box">
             {getCleanPgnDisplay()}
           </div>
           
-          <div className="pgn-navigation">
-            <button onClick={navFirst} disabled={currentMoveIndex === 0}>|◀</button>
-            <button onClick={navPrev} disabled={currentMoveIndex === 0}>◀</button>
-            <button onClick={navStop} title="Live">Live</button>
-            <button onClick={navNext} disabled={currentMoveIndex === history.length - 1}>▶</button>
-            <button onClick={navLast} disabled={currentMoveIndex === history.length - 1}>▶|</button>
+          {/* Navigation */}
+          <div className="stockfish-nav-buttons">
+            <button onClick={navFirst} disabled={currentMoveIndex === 0} className="sf-btn-small sf-nav-btn sf-nav-btn-first">|◀</button>
+            <button onClick={navPrev} disabled={currentMoveIndex === 0} className="sf-btn-small sf-nav-btn sf-nav-btn-prev">◀</button>
+            <button onClick={navStop} title="Live" className="sf-btn-small sf-nav-btn sf-nav-btn-live">Live</button>
+            <button onClick={navNext} disabled={currentMoveIndex === history.length - 1} className="sf-btn-small sf-nav-btn sf-nav-btn-next">▶</button>
+            <button onClick={navLast} disabled={currentMoveIndex === history.length - 1} className="sf-btn-small sf-nav-btn sf-nav-btn-last">▶|</button>
           </div>
 
-          <div className="action-buttons">
-             <button className="btn btn-secondary" onClick={handleCopyPgn}>Copy PGN</button>
-             <button className="btn btn-danger" onClick={handleResign} disabled={!gameActive}>
+          {/* Actions */}
+          <div className="stockfish-actions">
+             <button className="sf-btn-action sf-btn-copy" onClick={handleCopyPgn}>Copy PGN</button>
+             <button className="sf-btn-action sf-btn-resign" onClick={handleResign} disabled={!gameActive}>
                Resign
              </button>
           </div>
         </div>
       </div>
-
     </div>
   );
 };

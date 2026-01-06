@@ -41,7 +41,7 @@ const Game = () => {
   const [moveFrom, setMoveFrom] = useState('');
   const [optionSquares, setOptionSquares] = useState({});
 
-  // --- Promotion State (Required for Click-to-Move) ---
+  // --- Promotion State ---
   const [showPromotionDialog, setShowPromotionDialog] = useState(false);
   const [pendingPromotion, setPendingPromotion] = useState(null);
 
@@ -370,7 +370,8 @@ const Game = () => {
   }
 
   return (
-    <div className="game-page-wrapper" style={{ backgroundImage: !gameStarted ? `url('https://images.unsplash.com/photo-1528819622765-d6bcf132f793?q=80&w=2070')` : 'none' }}>
+    // Toggle class based on state: Royal Fog for Menu, None for Game
+    <div className={`game-page-wrapper ${!gameStarted ? 'welcome-background' : ''}`}>
 
       {!gameStarted ? (
         <div className="welcome-screen">
@@ -405,7 +406,7 @@ const Game = () => {
                       className="room-input"
                     />
                     <button className="timer-button secondary" onClick={joinRoom}>
-                      Join Room
+                      Join
                     </button>
                  </div>
                </div>
@@ -418,12 +419,11 @@ const Game = () => {
             <div className="menu-container waiting-container">
                 <h2>Room Created!</h2>
                 <p>Share this code with your friend:</p>
-                <div className="code-display" onClick={copyRoomCode}>
+                <div className="code-display" onClick={copyRoomCode} style={{ fontSize: '1.5rem', fontWeight: 'bold', cursor: 'pointer', margin: '1rem 0' }}>
                     {createdRoomCode}
-                    <span className="copy-hint">(Click to Copy)</span>
                 </div>
                 <p className="status-text">Waiting for friend to join...</p>
-                <button className="timer-button cancel-btn" onClick={() => { setMode('menu'); }}>
+                <button className="timer-button secondary" onClick={() => { setMode('menu'); }}>
                   Cancel
                 </button>
             </div>
@@ -434,18 +434,6 @@ const Game = () => {
         <div className="game-container">
 
           <div className="game-board-section">
-            <div className="theme-selector">
-              {Object.keys(boardThemes).map(theme => (
-                 <div
-                   key={theme}
-                   className={`theme-option ${currentTheme === theme ? 'active' : ''}`}
-                   style={{ background: `linear-gradient(135deg, ${boardThemes[theme].dark}, ${boardThemes[theme].light})` }}
-                   title={theme}
-                   onClick={() => setCurrentTheme(theme)}
-                 />
-              ))}
-            </div>
-
             <div className="player-info opponent">
               <span className="player-name">{opponentName}</span>
               <div className={`clock ${game.turn() !== playerColor ? 'active' : ''}`}>

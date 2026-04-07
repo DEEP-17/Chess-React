@@ -1,45 +1,29 @@
-/* PassAndPlay.css */
-:root {
-  --gold: #d4af37;
-  --gold-light: #f4d03f;
-  --gold-dark: #b8941f;
-  --black: #0a0a0a;
-  --black-light: #1a1a1a;
-  --black-lighter: #2a2a2a;
-  --white: #ffffff;
-  --gray: #888888;
-  --gray-light: #cccccc;
-  
-  /* Dynamic board size: 70% of viewport height or max 600px */
-  --board-size: min(70vh, 600px);
-}
+/* PassAndPlay.css — Stitch theme */
 
-/* Root: Force full height, no scroll */
 .passplay-root {
   height: 100vh;
   width: 100vw;
-  background: linear-gradient(135deg, var(--black) 0%, var(--black-light) 100%);
-  color: var(--gray-light);
-  font-family: Inter, sans-serif;
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-container-low) 100%);
+  color: var(--on-surface-variant);
+  font-family: var(--font-body);
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 1rem;
-  overflow: hidden; /* Prevent scrolling */
+  overflow: hidden;
 }
 
-/* Title */
 .passplay-title {
+  font-family: var(--font-headline);
   font-size: 1.8rem;
   margin-bottom: 1rem;
-  background: linear-gradient(45deg, var(--gold), var(--gold-light));
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-container) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 700;
   flex-shrink: 0;
 }
 
-/* Main layout: Horizontal Row */
 .passplay-main {
   display: flex;
   flex-direction: row;
@@ -47,35 +31,33 @@
   align-items: flex-start;
   justify-content: center;
   width: 100%;
-  height: 100%; /* Fill remaining height */
+  height: 100%;
   max-width: 1200px;
 }
 
-/* Board card */
 .passplay-board-card {
-  background: var(--black-lighter);
+  background: var(--surface-container);
   padding: 1rem;
-  border-radius: 1rem;
-  border: 1px solid var(--gold-dark);
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-ambient);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 
-/* Clocks */
 .passplay-clocks {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
-  width: var(--board-size); /* Match board width */
+  width: min(70vh, 600px);
   justify-content: space-between;
 }
 
 .pp-clock {
   padding: 0.5rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
+  font-family: var(--font-headline);
   font-size: 1rem;
   font-weight: 600;
   text-align: center;
@@ -84,46 +66,40 @@
 }
 
 .pp-clock-white {
-  background: var(--white);
-  color: var(--black);
-  border: 2px solid var(--gold-dark);
+  background: var(--on-surface);
+  color: var(--surface);
 }
 
 .pp-clock-black {
-  background: var(--black);
-  color: var(--white);
-  border: 2px solid var(--gold-dark);
+  background: var(--surface-container-highest);
+  color: var(--on-surface);
 }
 
 .pp-clock-active-white,
 .pp-clock-active-black {
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
-  border-color: var(--gold);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+  outline: 2px solid var(--primary-container);
 }
 
-/* Board wrapper */
 .passplay-board-wrapper {
-  width: var(--board-size);
-  height: var(--board-size);
-  /* Ensure the board stays square */
-  aspect-ratio: 1 / 1; 
+  width: min(70vh, 600px);
+  height: min(70vh, 600px);
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
-/* Sidebar */
 .passplay-sidebar {
-  background: var(--black-lighter);
+  background: var(--surface-container);
   padding: 1rem;
-  border-radius: 1rem;
-  border: 1px solid var(--gold-dark);
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-ambient);
   width: 320px;
-  /* Sidebar matches the height of Board + Clocks + Padding approx */
-  height: calc(var(--board-size) + 60px); 
+  height: calc(min(70vh, 600px) + 60px);
   display: flex;
   flex-direction: column;
 }
 
-/* Sidebar time controls */
 .passplay-sidebar-controls {
   display: flex;
   align-items: flex-end;
@@ -141,25 +117,29 @@
 
 .passplay-time-label {
   font-size: 0.8rem;
-  color: var(--gray-light);
+  color: var(--on-surface-variant);
 }
 
 .passplay-time-input-field {
   width: 100%;
   padding: 0.35rem 0.6rem;
-  border-radius: 0.4rem;
-  border: 1px solid var(--gold-dark);
-  background: var(--black);
-  color: var(--white);
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--surface-container-highest);
+  color: var(--on-surface);
   font-size: 0.85rem;
+  outline: none;
 }
 
-/* Buttons */
+.passplay-time-input-field:focus {
+  box-shadow: 0 0 0 1.5px rgba(59, 130, 246, 0.25);
+}
+
 .pp-btn,
 .pp-btn-small,
 .pp-btn-action {
   padding: 0.55rem 1rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   border: none;
   font-weight: 600;
   cursor: pointer;
@@ -167,32 +147,29 @@
 }
 
 .pp-btn-primary {
-  background: var(--gold);
-  color: var(--black);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-container) 100%);
+  color: var(--on-primary);
   white-space: nowrap;
   width: 100%;
 }
+
 .pp-btn-primary:hover {
-  background: var(--gold-light);
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.3);
 }
 
-/* PGN box - FLEXIBLE HEIGHT */
 .passplay-pgn-box {
-  background: var(--black);
+  background: var(--surface-container-low);
   padding: 0.7rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--gold-dark);
+  border-radius: var(--radius-md);
   font-family: "Courier New", monospace;
-  
-  /* Flex magic: take up remaining space */
-  flex-grow: 1; 
+  flex-grow: 1;
   overflow-y: auto;
-  min-height: 0; /* Important for flex child scrolling */
+  min-height: 0;
   margin-bottom: 1rem;
   font-size: 0.9rem;
+  color: var(--on-surface-variant);
 }
 
-/* Nav buttons row */
 .passplay-nav-buttons {
   display: flex;
   gap: 0.5rem;
@@ -201,25 +178,34 @@
   flex-shrink: 0;
 }
 
-/* Small nav buttons */
 .pp-btn-small {
   font-size: 0.85rem;
   padding: 0.4rem 0.8rem;
 }
 
 .pp-nav-btn-first,
-.pp-nav-btn-last { background: #4ade80; color: #000; }
+.pp-nav-btn-last {
+  background: var(--secondary);
+  color: var(--on-secondary);
+}
+
 .pp-nav-btn-prev,
-.pp-nav-btn-next { background: #60a5fa; color: #000; }
-.pp-nav-btn-live { background: #a855f7; color: white; }
+.pp-nav-btn-next {
+  background: var(--primary-container);
+  color: var(--on-primary);
+}
+
+.pp-nav-btn-live {
+  background: var(--tertiary-container);
+  color: var(--on-tertiary);
+}
 
 .pp-nav-btn:disabled {
-  background: #334155;
+  background: var(--surface-container-highest);
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* Actions at bottom */
 .passplay-actions {
   display: flex;
   flex-direction: column;
@@ -228,18 +214,20 @@
 }
 
 .pp-btn-copy {
-  background: var(--black-light);
-  color: var(--gold-light);
-  border: 1px solid var(--gold-dark);
+  background: var(--surface-container-low);
+  color: var(--primary);
+  border: 1px solid var(--outline-variant);
 }
+
 .pp-btn-copy:hover {
-  background: var(--black);
+  background: rgba(59, 130, 246, 0.08);
 }
 
 .pp-btn-resign {
-  background: #8b0000;
-  color: var(--white);
+  background: rgba(255, 180, 171, 0.1);
+  color: var(--error);
 }
+
 .pp-btn-resign:hover {
-  background: #b00000;
+  background: rgba(255, 180, 171, 0.18);
 }

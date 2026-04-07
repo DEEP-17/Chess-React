@@ -1,26 +1,11 @@
-/* Evaluate.css */
-:root {
-  --gold: #d4af37;
-  --gold-light: #f4d03f;
-  --gold-dark: #b8941f;
-  --black: #0a0a0a;
-  --black-light: #1a1a1a;
-  --black-lighter: #2a2a2a;
-  --white: #ffffff;
-  --gray: #888888;
-  --gray-light: #cccccc;
-  
-  /* Dynamic board size: 70% of viewport height or max 600px */
-  --board-size: min(70vh, 600px);
-}
+/* Evaluate.css — Stitch theme */
 
-/* Root: Force full height, no scroll */
 .evaluate-root {
   height: 100vh;
   width: 100vw;
-  background: linear-gradient(135deg, var(--black) 0%, var(--black-light) 100%);
-  color: var(--gray-light);
-  font-family: Inter, sans-serif;
+  background: linear-gradient(135deg, var(--surface) 0%, var(--surface-container-low) 100%);
+  color: var(--on-surface-variant);
+  font-family: var(--font-body);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -28,18 +13,17 @@
   overflow: hidden;
 }
 
-/* Title */
 .evaluate-title {
+  font-family: var(--font-headline);
   font-size: 1.8rem;
   margin-bottom: 1rem;
-  background: linear-gradient(45deg, var(--gold), var(--gold-light));
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-container) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 700;
   flex-shrink: 0;
 }
 
-/* Main layout: Horizontal Row */
 .evaluate-main {
   display: flex;
   flex-direction: row;
@@ -48,30 +32,26 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  max-width: 1250px; /* Slightly wider to accommodate analysis sidebar */
+  max-width: 1250px;
 }
 
-/* --- LEFT: Board Card --- */
 .evaluate-board-card {
-  background: var(--black-lighter);
+  background: var(--surface-container);
   padding: 1rem;
-  border-radius: 1rem;
-  border: 1px solid var(--gold-dark);
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-ambient);
   display: flex;
-  flex-direction: row; /* Row to put Eval Bar next to Board */
+  flex-direction: row;
   gap: 1rem;
   align-items: center;
   justify-content: center;
 }
 
-/* Evaluation Bar */
 .eval-bar-container {
   width: 24px;
-  height: var(--board-size);
-  background: var(--black);
-  border: 1px solid var(--gold-dark);
-  border-radius: 4px;
+  height: min(70vh, 600px);
+  background: var(--surface-container-highest);
+  border-radius: 999px;
   overflow: hidden;
   display: flex;
   flex-direction: column-reverse;
@@ -79,7 +59,7 @@
 
 .eval-bar-fill {
   width: 100%;
-  background: var(--white); /* White vs Empty (Black) */
+  background: var(--on-surface);
   transition: height 0.5s ease;
   display: flex;
   justify-content: center;
@@ -88,36 +68,32 @@
 .eval-score {
   font-size: 10px;
   font-weight: 800;
-  color: var(--black); /* Contrast against white bar */
+  color: #fff;
   margin-top: 2px;
   text-align: center;
-  mix-blend-mode: difference; /* Ensures visibility on both white/black parts */
-  color: #fff; 
+  mix-blend-mode: difference;
 }
 
-/* Board Wrapper */
 .evaluate-board-wrapper {
-  width: var(--board-size);
-  height: var(--board-size);
-  aspect-ratio: 1 / 1; 
+  width: min(70vh, 600px);
+  height: min(70vh, 600px);
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
-/* --- RIGHT: Sidebar --- */
 .evaluate-sidebar {
-  background: var(--black-lighter);
+  background: var(--surface-container);
   padding: 1rem;
-  border-radius: 1rem;
-  border: 1px solid var(--gold-dark);
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.25);
-  width: 360px; /* Slightly wider for text analysis */
-  /* Sidebar matches height roughly */
-  height: calc(var(--board-size) + 20px); 
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-ambient);
+  width: 360px;
+  height: calc(min(70vh, 600px) + 20px);
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
 }
 
-/* 1. Input Section */
 .evaluate-input-row {
   display: flex;
   gap: 0.5rem;
@@ -127,20 +103,22 @@
 .evaluate-input-field {
   flex: 1;
   padding: 0.4rem 0.6rem;
-  border-radius: 0.4rem;
-  border: 1px solid var(--gold-dark);
-  background: var(--black);
-  color: var(--white);
+  border-radius: var(--radius-md);
+  border: none;
+  background: var(--surface-container-highest);
+  color: var(--on-surface);
   font-size: 0.85rem;
   outline: none;
 }
 
-/* 2. AI Coach Box */
+.evaluate-input-field:focus {
+  box-shadow: 0 0 0 1.5px rgba(59, 130, 246, 0.25);
+}
+
 .ai-coach-box {
-  background: var(--black);
+  background: var(--surface-container-low);
   padding: 0.75rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--gold-dark);
+  border-radius: var(--radius-md);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -150,7 +128,7 @@
 .ai-header {
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--gold);
+  color: var(--primary);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -158,15 +136,13 @@
 
 .ai-message {
   font-size: 0.85rem;
-  color: var(--white);
+  color: var(--on-surface);
   line-height: 1.4;
 }
 
-/* 3. Analysis Table */
 .analysis-box {
-  background: var(--black);
-  border-radius: 0.5rem;
-  border: 1px solid var(--gold-dark);
+  background: var(--surface-container-low);
+  border-radius: var(--radius-md);
   padding: 0.5rem;
   flex-shrink: 0;
 }
@@ -180,38 +156,44 @@
 
 .engine-table th {
   text-align: left;
-  color: var(--gray);
+  color: var(--outline);
   font-weight: 600;
   padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--gold-dark);
+  border-bottom: 1px solid var(--outline-variant);
 }
 
 .engine-table td {
   padding: 0.4rem 0.2rem;
-  color: var(--gray-light);
+  color: var(--on-surface-variant);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.1);
+  border-bottom: 1px solid rgba(66, 71, 84, 0.3);
 }
 
-.label-best { color: var(--gold); font-weight: bold; }
-.label-great { color: #4ade80; } /* Green */
-.label-good { color: #60a5fa; } /* Blue */
+.label-best {
+  color: var(--primary);
+  font-weight: bold;
+}
 
-/* 4. PGN Box (Fills remaining space) */
+.label-great {
+  color: var(--secondary);
+}
+
+.label-good {
+  color: var(--primary-container);
+}
+
 .evaluate-pgn-box {
-  background: var(--black);
+  background: var(--surface-container-low);
   padding: 0.7rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--gold-dark);
+  border-radius: var(--radius-md);
   font-family: "Courier New", monospace;
-  
-  flex-grow: 1; /* Takes up remaining height */
+  flex-grow: 1;
   overflow-y: auto;
-  min-height: 0; 
+  min-height: 0;
   font-size: 0.9rem;
-  color: var(--gray-light);
+  color: var(--on-surface-variant);
 }
 
 .pgn-move {
@@ -221,13 +203,13 @@
   border-radius: 3px;
   margin: 0 2px;
 }
+
 .pgn-move.active {
-  background: var(--gold);
-  color: var(--black);
+  background: var(--primary-container);
+  color: var(--on-primary);
   font-weight: bold;
 }
 
-/* 5. Navigation Buttons */
 .evaluate-nav-buttons {
   display: flex;
   gap: 0.5rem;
@@ -235,10 +217,9 @@
   flex-shrink: 0;
 }
 
-/* Buttons */
 .eval-btn {
   padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   border: none;
   font-weight: 600;
   cursor: pointer;
@@ -247,29 +228,38 @@
 }
 
 .eval-btn-primary {
-  background: var(--gold);
-  color: var(--black);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-container) 100%);
+  color: var(--on-primary);
 }
+
 .eval-btn-primary:hover {
-  background: var(--gold-light);
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.3);
 }
 
 .eval-nav-btn {
   padding: 0.4rem 0.8rem;
   font-size: 0.85rem;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-weight: 600;
 }
 
-.nav-first, .nav-last { background: #4ade80; color: #000; }
-.nav-prev, .nav-next { background: #60a5fa; color: #000; }
+.nav-first,
+.nav-last {
+  background: var(--secondary);
+  color: var(--on-secondary);
+}
+
+.nav-prev,
+.nav-next {
+  background: var(--primary-container);
+  color: var(--on-primary);
+}
 
 .eval-nav-btn:disabled {
-  background: var(--black);
-  color: var(--gray);
-  border: 1px solid var(--gray);
+  background: var(--surface-container-highest);
+  color: var(--outline);
   opacity: 0.5;
   cursor: not-allowed;
 }

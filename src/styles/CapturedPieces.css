@@ -1,0 +1,39 @@
+/* ── Captured Pieces Display ── */
+.captured-pieces {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex-wrap: nowrap;
+  min-height: 20px;
+  margin-top: 1px;
+}
+
+.cp-group {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 2px;
+}
+
+.cp-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+  opacity: 0.85;
+  display: inline-block;
+  margin-right: -3px;
+}
+
+.cp-icon:last-child {
+  margin-right: 0;
+}
+
+.cp-adv {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--secondary, #4edea3);
+  margin-left: 4px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(78, 222, 163, 0.12);
+  line-height: 1.4;
+  white-space: nowrap;
+}

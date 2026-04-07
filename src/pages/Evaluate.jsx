@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import '../styles/Evaluate.css';
 
 const Evaluate = () => {
+  const [searchParams] = useSearchParams();
   const [game, setGame] = useState(new Chess());
   const [pgnInput, setPgnInput] = useState('');
   const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
@@ -17,6 +19,25 @@ const Evaluate = () => {
   const [aiMessage, setAiMessage] = useState("Ready to analyze!");
   
   const stockfish = useRef(null);
+
+  // Auto-load PGN from URL param (from post-game "Analyze" button)
+  useEffect(() => {
+    const pgn = searchParams.get('pgn');
+    if (pgn) {
+      try {
+        const g = new Chess();
+        g.loadPgn(decodeURIComponent(pgn));
+        setGame(g);
+        setHistory(g.history());
+        setCurrentMoveIndex(g.history().length - 1);
+        setIsViewingHistory(false);
+        setMoveFrom('');
+        setOptionSquares({});
+      } catch (e) {
+        console.error('Failed to load PGN from URL:', e);
+      }
+    }
+  }, []);
 
   // --- Logic (Stockfish Init) ---
   useEffect(() => {

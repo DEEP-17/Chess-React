@@ -1,0 +1,172 @@
+/* ═══ Daily Puzzle Panel ═══ */
+.dp-panel {
+  background: var(--surface-container);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.dp-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+}
+
+.dp-header-icon {
+  font-size: 1rem;
+}
+
+.dp-header h4 {
+  font-family: var(--font-headline);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--outline);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+.dp-rating {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--tertiary);
+  background: rgba(255, 183, 134, 0.1);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+.dp-board-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 0 1rem;
+}
+
+.dp-status-area {
+  padding: 0.75rem 1rem 0.5rem;
+}
+
+.dp-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+}
+
+.dp-status--playing {
+  color: var(--on-surface-variant);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dp-status--solved {
+  color: var(--secondary);
+  background: rgba(78, 222, 163, 0.08);
+  animation: solvedPulse 0.5s ease;
+}
+
+.dp-status--wrong {
+  color: var(--error);
+  background: rgba(255, 180, 171, 0.08);
+  animation: wrongShake 0.4s ease;
+}
+
+.dp-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.dp-status-dot--playing {
+  background: var(--primary);
+  box-shadow: 0 0 6px var(--primary);
+  animation: pulse 2s infinite;
+}
+
+.dp-check {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+@keyframes solvedPulse {
+  0% { transform: scale(0.95); opacity: 0.5; }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes wrongShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.dp-themes {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0 1rem 0.5rem;
+  flex-wrap: wrap;
+}
+
+.dp-theme-chip {
+  font-size: 0.68rem;
+  font-weight: 500;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  text-transform: capitalize;
+}
+
+.dp-lichess-link {
+  display: block;
+  text-align: center;
+  padding: 0.6rem 1rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--primary);
+  text-decoration: none;
+  border-top: 1px solid var(--outline-variant);
+  transition: background 0.2s;
+}
+
+.dp-lichess-link:hover {
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.dp-loading,
+.dp-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  font-size: 0.82rem;
+  color: var(--on-surface-variant);
+}
+
+.dp-error {
+  color: var(--error);
+}
+
+.dp-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--outline-variant);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

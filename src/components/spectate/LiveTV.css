@@ -1,0 +1,234 @@
+/* ═══ Live TV Panel ═══ */
+.ltv-panel {
+  background: var(--surface-container);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.ltv-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+}
+
+.ltv-header h4 {
+  font-family: var(--font-headline);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--outline);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ltv-live-dot {
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  animation: ltvPulse 1.5s ease infinite;
+}
+
+@keyframes ltvPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+/* ── Tabs ── */
+.ltv-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0 0.75rem 0.5rem;
+  overflow-x: auto;
+}
+
+.ltv-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.6rem;
+  background: transparent;
+  border: 1px solid var(--outline-variant);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.ltv-tab:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--outline);
+}
+
+.ltv-tab--active {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.ltv-tab-icon {
+  font-size: 0.8rem;
+}
+
+.ltv-tab-label {
+  font-size: 0.7rem;
+}
+
+/* ── Active Game ── */
+.ltv-game {
+  padding: 0 1rem;
+}
+
+.ltv-player {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0;
+}
+
+.ltv-title-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+}
+
+.ltv-player-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  flex: 1;
+}
+
+.ltv-player-rating {
+  font-family: var(--font-headline);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.ltv-board-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 0.25rem 0 0.5rem;
+}
+
+.ltv-watch-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem;
+  margin: 0.25rem 0 0.75rem;
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  border-radius: var(--radius-md);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #ef4444;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.ltv-watch-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.ltv-watch-dot {
+  width: 6px;
+  height: 6px;
+  background: #ef4444;
+  border-radius: 50%;
+  animation: ltvPulse 1.5s ease infinite;
+}
+
+/* ── Channel List ── */
+.ltv-channel-list {
+  border-top: 1px solid var(--outline-variant);
+  padding: 0.5rem 0.75rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.ltv-channel-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ltv-channel-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.ltv-ch-icon {
+  font-size: 1rem;
+  width: 24px;
+  text-align: center;
+}
+
+.ltv-ch-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ltv-ch-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.ltv-ch-player {
+  font-size: 0.7rem;
+  color: var(--on-surface-variant);
+}
+
+.ltv-ch-live {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #ef4444;
+  letter-spacing: 0.08em;
+  animation: ltvPulse 2s ease infinite;
+}
+
+.ltv-loading,
+.ltv-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  font-size: 0.82rem;
+  color: var(--on-surface-variant);
+}
+
+.ltv-error {
+  color: var(--error);
+}
+
+.ltv-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--outline-variant);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: ltvSpin 0.8s linear infinite;
+}
+
+@keyframes ltvSpin {
+  to { transform: rotate(360deg); }
+}

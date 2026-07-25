@@ -94,6 +94,58 @@ export async function getCloudEval(fen) {
   return data;
 }
 
+// ─── Live TV Stream (NDJSON) ────────────────────────────────
+/**
+ * Streams the Lichess TV feed. Returns an AbortController so the caller
+ * can cancel the stream when the component unmounts.
+ *
+ * @param {function} onData  – called with each parsed JSON event
+ * @param {function} onError – called on fetch / parse error
+ * @returns {AbortController}
+ */
+export function streamLiveTVFeed(onData, onError) {
+  const controller = new AbortController();
+
+  (async () => {
+    try {
+      const res = await fetch(`${LICHESS_API}/tv/feed`, {
+        headers: { Accept: 'application/x-ndjson' },
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error(`TV feed error: ${res.status}`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // keep the incomplete line in the buffer
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          try {
+            onData(JSON.parse(trimmed));
+          } catch {
+            // skip malformed lines
+          }
+        }
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        onError?.(err);
+      }
+    }
+  })();
+
+  return controller;
+}
+
 // ─── Endgame Tablebase ──────────────────────────────────────
 export async function getTablebase(fen) {
   const cacheKey = `tablebase_${fen}`;

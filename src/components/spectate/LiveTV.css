@@ -21,6 +21,7 @@
   color: var(--outline);
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  flex: 1;
 }
 
 .ltv-live-dot {
@@ -32,6 +33,14 @@
   animation: ltvPulse 1.5s ease infinite;
 }
 
+.ltv-stream-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #ef4444;
+  letter-spacing: 0.08em;
+  animation: ltvPulse 2s ease infinite;
+}
+
 @keyframes ltvPulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(0.85); }
@@ -41,8 +50,9 @@
 .ltv-tabs {
   display: flex;
   gap: 0.25rem;
-  padding: 0 0.75rem 0.5rem;
+  padding: 0.5rem 0.75rem;
   overflow-x: auto;
+  border-top: 1px solid var(--outline-variant);
 }
 
 .ltv-tab {
@@ -119,34 +129,29 @@
 .ltv-board-wrap {
   display: flex;
   justify-content: center;
-  padding: 0.25rem 0 0.5rem;
+  padding: 0.25rem 0 0.25rem;
 }
 
-.ltv-watch-btn {
+/* ── Status Bar (replaces old Watch on Lichess link) ── */
+.ltv-status-bar {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  padding: 0.55rem;
-  margin: 0.25rem 0 0.75rem;
-  background: rgba(239, 68, 68, 0.06);
-  border: 1px solid rgba(239, 68, 68, 0.15);
+  padding: 0.5rem;
+  margin: 0.25rem 0 0.5rem;
+  background: rgba(78, 222, 163, 0.06);
+  border: 1px solid rgba(78, 222, 163, 0.12);
   border-radius: var(--radius-md);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  color: #ef4444;
-  text-decoration: none;
-  transition: all 0.2s;
-}
-
-.ltv-watch-btn:hover {
-  background: rgba(239, 68, 68, 0.12);
+  color: var(--secondary);
 }
 
 .ltv-watch-dot {
   width: 6px;
   height: 6px;
-  background: #ef4444;
+  background: var(--secondary);
   border-radius: 50%;
   animation: ltvPulse 1.5s ease infinite;
 }
@@ -227,6 +232,12 @@
   border-top-color: var(--primary);
   border-radius: 50%;
   animation: ltvSpin 0.8s linear infinite;
+}
+
+.ltv-spinner--small {
+  width: 12px;
+  height: 12px;
+  border-width: 1.5px;
 }
 
 @keyframes ltvSpin {

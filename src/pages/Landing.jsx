@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import DailyPuzzle from '../components/puzzle/DailyPuzzle';
+import LiveTV from '../components/spectate/LiveTV';
 import '../styles/Landing.css';
 
 const Landing = () => {
@@ -31,19 +33,6 @@ const Landing = () => {
 
   // Mock data for lobby
   const onlineCount = 1248;
-  const lobbyMessages = [
-    { user: 'KnightRider99', text: 'Anyone for a 10 min game? DM me!', color: 'var(--primary)' },
-    { user: 'ChessNova', text: 'The tournament just started, let\'s go!', color: 'var(--secondary)' },
-    { user: 'System', text: 'Player "EloHunter" has just reached 2400 Blitz rating!', color: 'var(--tertiary)' },
-    { user: 'GM_Artemis', text: 'GG everyone, great session today.', color: 'var(--on-surface-variant)' },
-  ];
-
-  const topPlayers = [
-    { rank: 1, name: 'Magnus Pro', elo: 2850, trend: 'up' },
-    { rank: 2, name: 'GM Artemis', elo: 2780, trend: 'up' },
-    { rank: 3, name: 'EloHunter', elo: 2400, trend: 'down' },
-    { rank: 4, name: 'KnightRider99', elo: 2350, trend: 'up' },
-  ];
 
   return (
     <div className="lobby-layout">
@@ -156,41 +145,10 @@ const Landing = () => {
             </div>
           </div>
 
-          {/* RIGHT: Chat & Leaderboard */}
+          {/* RIGHT: Daily Puzzle & Live TV */}
           <div className="lobby-right-panel">
-            {/* Global Lobby Chat */}
-            <div className="lobby-chat-panel">
-              <div className="lobby-panel-header">
-                <h4>GLOBAL LOBBY</h4>
-              </div>
-              <div className="lobby-chat-messages">
-                {lobbyMessages.map((msg, i) => (
-                  <div key={i} className="lobby-chat-msg">
-                    <span className="lobby-chat-user" style={{ color: msg.color }}>{msg.user}</span>
-                    <span className="lobby-chat-text">{msg.text}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Top Players */}
-            <div className="lobby-leaderboard-panel">
-              <div className="lobby-panel-header">
-                <h4>TOP PLAYERS</h4>
-              </div>
-              <div className="lobby-leaderboard-list">
-                {topPlayers.map((p) => (
-                  <div key={p.rank} className="lobby-leaderboard-row">
-                    <span className="lobby-lb-rank">#{p.rank}</span>
-                    <span className="lobby-lb-name">{p.name}</span>
-                    <span className="lobby-lb-elo">{p.elo}</span>
-                    <span className={`lobby-lb-trend lobby-lb-trend--${p.trend}`}>
-                      {p.trend === 'up' ? '↑' : '↓'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <DailyPuzzle />
+            <LiveTV />
           </div>
         </div>
       </div>

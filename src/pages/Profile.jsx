@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
 import Sidebar from '../components/Sidebar';
+import { getLichessUser } from '../services/lichess';
 import '../styles/Profile.css';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -11,10 +12,62 @@ const Profile = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
+  // Lichess linking state
+  const [lichessInput, setLichessInput] = useState('');
+  const [lichessUsername, setLichessUsername] = useState('');
+  const [lichessData, setLichessData] = useState(null);
+  const [lichessLoading, setLichessLoading] = useState(false);
+  const [lichessError, setLichessError] = useState(null);
+
   useEffect(() => {
     const userData = localStorage.getItem('chessmaster_user');
     if (userData) setUser(JSON.parse(userData));
+
+    // Load saved Lichess username
+    const savedLichess = localStorage.getItem('chessmaster_lichess_username');
+    if (savedLichess) {
+      setLichessUsername(savedLichess);
+      setLichessInput(savedLichess);
+    }
   }, []);
+
+  // Fetch Lichess data whenever username changes
+  const fetchLichessData = useCallback(async (username) => {
+    if (!username) return;
+    setLichessLoading(true);
+    setLichessError(null);
+    try {
+      const data = await getLichessUser(username);
+      setLichessData(data);
+    } catch (err) {
+      setLichessError('Could not find Lichess user "' + username + '"');
+      setLichessData(null);
+      console.error('Lichess fetch error:', err);
+    } finally {
+      setLichessLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (lichessUsername) {
+      fetchLichessData(lichessUsername);
+    }
+  }, [lichessUsername, fetchLichessData]);
+
+  const handleLinkLichess = () => {
+    const trimmed = lichessInput.trim();
+    if (!trimmed) return;
+    localStorage.setItem('chessmaster_lichess_username', trimmed);
+    setLichessUsername(trimmed);
+  };
+
+  const handleUnlinkLichess = () => {
+    localStorage.removeItem('chessmaster_lichess_username');
+    setLichessUsername('');
+    setLichessInput('');
+    setLichessData(null);
+    setLichessError(null);
+  };
 
   const createChartData = (stats) => {
     if (!stats) return null;
@@ -47,6 +100,12 @@ const Profile = () => {
         },
       },
     },
+  };
+
+  // Helper to extract Lichess rating for a perf type
+  const getLichessRating = (perfKey) => {
+    if (!lichessData?.perfs?.[perfKey]) return null;
+    return lichessData.perfs[perfKey];
   };
 
   // Mock match history
@@ -100,6 +159,71 @@ const Profile = () => {
             </div>
           </div>
 
+          {/* Lichess Account Linking */}
+          <div className="profile-lichess-section">
+            <div className="profile-lichess-header">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+              <h4>LINK LICHESS ACCOUNT</h4>
+              {lichessUsername && lichessData && (
+                <span className="profile-lichess-connected">
+                  <span className="profile-lichess-connected-dot" />
+                  Connected
+                </span>
+              )}
+            </div>
+            <div className="profile-lichess-body">
+              <div className="profile-lichess-input-row">
+                <input
+                  type="text"
+                  className="profile-lichess-input"
+                  placeholder="Enter Lichess username..."
+                  value={lichessInput}
+                  onChange={(e) => setLichessInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleLinkLichess()}
+                />
+                {lichessUsername ? (
+                  <div className="profile-lichess-btn-group">
+                    <button
+                      className="profile-lichess-refresh-btn"
+                      onClick={() => fetchLichessData(lichessUsername)}
+                      disabled={lichessLoading}
+                    >
+                      {lichessLoading ? '...' : '↻'}
+                    </button>
+                    <button className="profile-lichess-unlink-btn" onClick={handleUnlinkLichess}>
+                      Unlink
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    className="profile-lichess-connect-btn"
+                    onClick={handleLinkLichess}
+                    disabled={!lichessInput.trim() || lichessLoading}
+                  >
+                    {lichessLoading ? 'Connecting...' : 'Connect'}
+                  </button>
+                )}
+              </div>
+              {lichessError && (
+                <div className="profile-lichess-error">{lichessError}</div>
+              )}
+              {lichessData && (
+                <div className="profile-lichess-info-row">
+                  <span className="profile-lichess-info-label">
+                    {lichessData.title ? <span className="profile-lichess-title">{lichessData.title}</span> : null}
+                    {lichessData.username}
+                  </span>
+                  <span className="profile-lichess-info-games">
+                    {lichessData.count?.all?.toLocaleString() || '—'} games played
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Stat Cards Row */}
           <div className="profile-stats-row">
             <div className="profile-stat-card">
@@ -150,7 +274,7 @@ const Profile = () => {
                 </div>
               </div>
 
-              {/* Rating Cards */}
+              {/* Local Rating Cards */}
               <div className="profile-ratings-grid">
                 {[
                   { label: 'Bullet', rating: user.bulletRating || 1200, stats: user.bulletStats },
@@ -169,6 +293,58 @@ const Profile = () => {
                   </div>
                 ))}
               </div>
+
+              {/* Lichess Rating Cards */}
+              {lichessData && (
+                <div className="profile-lichess-ratings">
+                  <div className="profile-lichess-ratings-header">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                      <line x1="9" x2="9.01" y1="9" y2="9" />
+                      <line x1="15" x2="15.01" y1="9" y2="9" />
+                    </svg>
+                    <h4>LICHESS RATINGS</h4>
+                    <span className="profile-lichess-username-badge">@{lichessData.username}</span>
+                  </div>
+                  <div className="profile-ratings-grid">
+                    {[
+                      { label: 'Bullet', key: 'bullet', icon: '⚡' },
+                      { label: 'Blitz', key: 'blitz', icon: '🔥' },
+                      { label: 'Rapid', key: 'rapid', icon: '⏱' },
+                    ].map((cat) => {
+                      const perf = getLichessRating(cat.key);
+                      return (
+                        <div key={cat.key} className="profile-rating-card profile-rating-card--lichess">
+                          <div className="profile-lichess-card-badge">
+                            <span>{cat.icon}</span>
+                            Lichess
+                          </div>
+                          <h3 className="profile-rating-title profile-rating-title--lichess">{cat.label}</h3>
+                          <div className="profile-rating-num">
+                            {perf ? perf.rating : '—'}
+                          </div>
+                          {perf && (
+                            <div className="profile-lichess-perf-stats">
+                              <span className="profile-lichess-games-count">
+                                {perf.games?.toLocaleString() || 0} games
+                              </span>
+                              {perf.prog !== undefined && perf.prog !== 0 && (
+                                <span className={`profile-lichess-prog ${perf.prog > 0 ? 'prog-up' : 'prog-down'}`}>
+                                  {perf.prog > 0 ? '+' : ''}{perf.prog}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {!perf && (
+                            <p className="profile-no-data">Not rated</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Right: Tactical + Engine */}

@@ -1,197 +1,123 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { getDailyPuzzle } from '../../services/lichess';
 import './DailyPuzzle.css';
 
-const DailyPuzzle = () => {
+export default function DailyPuzzle() {
+  const [game, setGame] = useState(new Chess());
   const [puzzle, setPuzzle] = useState(null);
-  const [game, setGame] = useState(null);
-  const [solutionMoves, setSolutionMoves] = useState([]);
   const [solutionIdx, setSolutionIdx] = useState(0);
-  const [status, setStatus] = useState('loading'); // loading | playing | solved | wrong
-  const [error, setError] = useState(null);
-  const [moveFrom, setMoveFrom] = useState('');
-  const [optionSquares, setOptionSquares] = useState({});
-  const [highlightSquares, setHighlightSquares] = useState({});
+
+  // States: 'loading' | 'playing' | 'wrong' | 'solved' | 'error'
+  const [status, setStatus] = useState('loading');
 
   useEffect(() => {
-    let cancelled = false;
+    // 1. Fetch the puzzle from the Lichess API service
     getDailyPuzzle()
       .then((data) => {
-        if (cancelled) return;
+        const newGame = new Chess();
 
-        // Replay the game PGN to reach the puzzle starting position
-        const g = new Chess();
-        const pgnMoves = data.game.pgn.split(' ');
-        for (const m of pgnMoves) {
-          try { g.move(m); } catch { break; }
-        }
-
-        setPuzzle(data.puzzle);
-        setGame(new Chess(g.fen()));
-        setSolutionMoves(data.puzzle.solution);
-        setSolutionIdx(0);
-        setStatus('playing');
-
-        // The first move in the solution is the opponent's move that sets up the puzzle
-        // Auto-play it after a brief delay
-        setTimeout(() => {
-          if (cancelled) return;
-          const firstMove = data.puzzle.solution[0];
-          const from = firstMove.slice(0, 2);
-          const to = firstMove.slice(2, 4);
-          const promo = firstMove.length > 4 ? firstMove[4] : undefined;
-          const nextG = new Chess(g.fen());
+        // 2. The API returns a space-separated string of moves.
+        // Play them all to reach the exact position where the puzzle begins.
+        const moves = data.game.pgn.split(' ');
+        moves.forEach((move) => {
           try {
-            nextG.move({ from, to, promotion: promo });
-            setGame(new Chess(nextG.fen()));
-            setHighlightSquares({
-              [from]: { background: 'rgba(255, 170, 0, 0.3)' },
-              [to]: { background: 'rgba(255, 170, 0, 0.3)' },
-            });
-            setSolutionIdx(1);
-          } catch (e) {
-            console.error('Failed to play first puzzle move:', e);
+            newGame.move(move);
+          } catch {
+            // skip invalid tokens (e.g. move numbers like "1.")
           }
-        }, 600);
+        });
+
+        setGame(new Chess(newGame.fen()));
+        setPuzzle(data.puzzle);
+        setStatus('playing');
       })
       .catch((err) => {
-        if (!cancelled) {
-          setError('Could not load puzzle');
-          console.error(err);
-        }
+        console.error('Failed to fetch daily puzzle', err);
+        setStatus('error');
       });
-
-    return () => { cancelled = true; };
   }, []);
 
-  const getMoveOptions = useCallback((square) => {
-    if (!game) return;
-    const moves = game.moves({ square, verbose: true });
-    if (moves.length === 0) { setOptionSquares({}); return false; }
+  function onPieceDrop(sourceSquare, targetSquare, piece) {
+    if (status !== 'playing' && status !== 'wrong') return false;
 
-    const newSq = {};
-    moves.forEach((m) => {
-      newSq[m.to] = {
-        background: game.get(m.to) && game.get(m.to).color !== game.get(square).color
-          ? 'radial-gradient(circle, rgba(78,222,163,.25) 85%, transparent 85%)'
-          : 'radial-gradient(circle, rgba(78,222,163,.3) 25%, transparent 25%)',
-        borderRadius: '50%',
-      };
-    });
-    newSq[square] = { background: 'rgba(59, 130, 246, 0.35)' };
-    setOptionSquares(newSq);
-    return true;
-  }, [game]);
+    // 3. Convert the user's move into UCI format (e.g., "e2e4")
+    const moveString = sourceSquare + targetSquare;
 
-  const tryMove = useCallback((from, to, promotion) => {
-    if (!game || status !== 'playing' || solutionIdx >= solutionMoves.length) return false;
+    // Handle pawn promotions (Lichess uses 'q' for queen promotion in UCI)
+    const isPromotion =
+      piece[1] === 'P' &&
+      (targetSquare[1] === '8' || targetSquare[1] === '1');
+    const uciMove = isPromotion ? moveString + 'q' : moveString;
 
-    const uciMove = from + to + (promotion || '');
-    const expected = solutionMoves[solutionIdx];
+    const expectedMove = puzzle.solution[solutionIdx];
 
-    // Check if user move matches expected solution move
-    if (uciMove === expected || (uciMove.length === 4 && expected.startsWith(uciMove))) {
+    if (uciMove === expectedMove) {
+      // ✅ Correct move! Apply it to the board.
       const gameCopy = new Chess(game.fen());
-      try {
-        const promo = expected.length > 4 ? expected[4] : promotion;
-        gameCopy.move({ from, to, promotion: promo });
-      } catch {
-        return false;
-      }
-
-      setGame(new Chess(gameCopy.fen()));
-      setMoveFrom('');
-      setOptionSquares({});
-      setHighlightSquares({
-        [from]: { background: 'rgba(78, 222, 163, 0.3)' },
-        [to]: { background: 'rgba(78, 222, 163, 0.3)' },
+      gameCopy.move({
+        from: sourceSquare,
+        to: targetSquare,
+        promotion: isPromotion ? 'q' : undefined,
       });
+      setGame(new Chess(gameCopy.fen()));
 
-      const nextIdx = solutionIdx + 1;
-
-      // Check if puzzle is solved
-      if (nextIdx >= solutionMoves.length) {
-        setSolutionIdx(nextIdx);
+      // 4. Check if the puzzle is completely solved
+      if (solutionIdx + 1 === puzzle.solution.length) {
         setStatus('solved');
-        return true;
-      }
+      } else {
+        // 5. If not solved, auto-play the opponent's response after 500ms
+        setStatus('loading'); // Temporarily lock the board
+        setTimeout(() => {
+          const nextMove = puzzle.solution[solutionIdx + 1];
+          const oppSource = nextMove.substring(0, 2);
+          const oppTarget = nextMove.substring(2, 4);
+          const oppPromotion =
+            nextMove.length === 5 ? nextMove[4] : undefined;
 
-      // Auto-play opponent's response
-      setSolutionIdx(nextIdx);
-      setTimeout(() => {
-        const opponentMove = solutionMoves[nextIdx];
-        const oFrom = opponentMove.slice(0, 2);
-        const oTo = opponentMove.slice(2, 4);
-        const oPromo = opponentMove.length > 4 ? opponentMove[4] : undefined;
-        const nextG = new Chess(gameCopy.fen());
-        try {
-          nextG.move({ from: oFrom, to: oTo, promotion: oPromo });
-          setGame(new Chess(nextG.fen()));
-          setHighlightSquares({
-            [oFrom]: { background: 'rgba(255, 170, 0, 0.3)' },
-            [oTo]: { background: 'rgba(255, 170, 0, 0.3)' },
+          gameCopy.move({
+            from: oppSource,
+            to: oppTarget,
+            promotion: oppPromotion,
           });
-          setSolutionIdx(nextIdx + 1);
+
+          setGame(new Chess(gameCopy.fen()));
+          setSolutionIdx((prev) => prev + 2);
 
           // Check if that was the last move
-          if (nextIdx + 1 >= solutionMoves.length) {
+          if (solutionIdx + 2 >= puzzle.solution.length) {
             setStatus('solved');
+          } else {
+            setStatus('playing');
           }
-        } catch (e) {
-          console.error('Failed opponent move:', e);
-        }
-      }, 400);
-
-      return true;
+        }, 500);
+      }
+      return true; // Allows the piece to snap into place
     } else {
-      // Wrong move
+      // ❌ Incorrect move!
       setStatus('wrong');
-      setMoveFrom('');
-      setOptionSquares({});
-      setTimeout(() => setStatus('playing'), 1200);
-      return false;
+      // Briefly show the "wrong" state before allowing them to try again
+      setTimeout(() => setStatus('playing'), 800);
+      return false; // Snaps the piece back to its original square
     }
-  }, [game, status, solutionIdx, solutionMoves]);
+  }
 
-  const onSquareClick = useCallback((square) => {
-    if (status !== 'playing' || !game) return;
-
-    if (optionSquares[square] && moveFrom) {
-      tryMove(moveFrom, square);
-      return;
-    }
-    if (moveFrom === square) { setMoveFrom(''); setOptionSquares({}); return; }
-
-    const piece = game.get(square);
-    if (piece && piece.color === game.turn()) {
-      setMoveFrom(square);
-      getMoveOptions(square);
-      return;
-    }
-    setMoveFrom('');
-    setOptionSquares({});
-  }, [game, status, moveFrom, optionSquares, tryMove, getMoveOptions]);
-
-  const onDrop = useCallback((sourceSquare, targetSquare) => {
-    if (status !== 'playing') return false;
-    return tryMove(sourceSquare, targetSquare);
-  }, [status, tryMove]);
-
-  if (error) {
+  // ── Error state ──
+  if (status === 'error') {
     return (
       <div className="dp-panel">
         <div className="dp-header">
           <span className="dp-header-icon">🧩</span>
           <h4>PUZZLE OF THE DAY</h4>
         </div>
-        <div className="dp-error">{error}</div>
+        <div className="dp-error">Could not load puzzle</div>
       </div>
     );
   }
 
-  if (status === 'loading' || !game) {
+  // ── Loading state ──
+  if (status === 'loading' && !puzzle) {
     return (
       <div className="dp-panel">
         <div className="dp-header">
@@ -206,31 +132,36 @@ const DailyPuzzle = () => {
     );
   }
 
-  const turnToPlay = game.turn() === 'w' ? 'White' : 'Black';
+  // Determine the side to play based on whose turn it is in the FEN
+  const boardOrientation = game.turn() === 'w' ? 'white' : 'black';
 
   return (
     <div className="dp-panel">
       <div className="dp-header">
         <span className="dp-header-icon">🧩</span>
         <h4>PUZZLE OF THE DAY</h4>
-        {puzzle && (
-          <span className="dp-rating">⭐ {puzzle.rating}</span>
-        )}
+        {puzzle && <span className="dp-rating">⭐ {puzzle.rating}</span>}
       </div>
 
       <div className="dp-board-wrap">
         <Chessboard
           id="DailyPuzzleBoard"
           position={game.fen()}
-          onPieceDrop={onDrop}
-          onSquareClick={onSquareClick}
-          customSquareStyles={{ ...highlightSquares, ...optionSquares }}
-          boardOrientation={game.turn() === 'w' ? 'white' : 'black'}
+          onPieceDrop={onPieceDrop}
+          boardOrientation={boardOrientation}
           boardWidth={280}
           arePiecesDraggable={status === 'playing'}
           animationDuration={200}
           customDarkSquareStyle={{ backgroundColor: '#272a2e' }}
           customLightSquareStyle={{ backgroundColor: '#3d4147' }}
+          customBoardStyle={{
+            borderRadius: '4px',
+            boxShadow:
+              status === 'wrong'
+                ? '0 0 15px rgba(239, 68, 68, 0.8)'
+                : '0 2px 10px rgba(0, 0, 0, 0.5)',
+            transition: 'box-shadow 0.3s ease',
+          }}
         />
       </div>
 
@@ -238,25 +169,33 @@ const DailyPuzzle = () => {
         {status === 'playing' && (
           <div className="dp-status dp-status--playing">
             <span className="dp-status-dot dp-status-dot--playing" />
-            {turnToPlay} to play — find the best move!
+            Find the best move for {boardOrientation}.
+          </div>
+        )}
+        {status === 'loading' && puzzle && (
+          <div className="dp-status dp-status--playing">
+            <span className="dp-status-dot dp-status-dot--playing" />
+            Opponent is responding...
           </div>
         )}
         {status === 'solved' && (
           <div className="dp-status dp-status--solved">
-            <span className="dp-check">✓</span> Puzzle solved!
+            <span className="dp-check">🎉</span> Puzzle Solved!
           </div>
         )}
         {status === 'wrong' && (
           <div className="dp-status dp-status--wrong">
-            ✗ Not quite — try again!
+            ✗ Incorrect move. Try again!
           </div>
         )}
       </div>
 
       {puzzle?.themes && puzzle.themes.length > 0 && (
         <div className="dp-themes">
-          {puzzle.themes.slice(0, 4).map((t) => (
-            <span key={t} className="dp-theme-chip">{t}</span>
+          {puzzle.themes.map((t) => (
+            <span key={t} className="dp-theme-chip">
+              {t}
+            </span>
           ))}
         </div>
       )}
@@ -271,6 +210,4 @@ const DailyPuzzle = () => {
       </a>
     </div>
   );
-};
-
-export default DailyPuzzle;
+}

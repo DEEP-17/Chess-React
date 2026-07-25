@@ -468,6 +468,305 @@
   color: var(--primary);
 }
 
+/* ── Lichess Account Linking ── */
+.profile-lichess-section {
+  background: var(--surface-container);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  border: 1px solid var(--outline-variant);
+  transition: border-color 0.3s;
+}
+
+.profile-lichess-section:focus-within {
+  border-color: var(--primary);
+}
+
+.profile-lichess-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  color: var(--outline);
+}
+
+.profile-lichess-header h4 {
+  font-family: var(--font-headline);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--outline);
+  letter-spacing: 0.12em;
+  flex: 1;
+}
+
+.profile-lichess-connected {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--secondary);
+  background: rgba(78, 222, 163, 0.08);
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+}
+
+.profile-lichess-connected-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--secondary);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--secondary);
+  animation: lichessPulse 2s ease infinite;
+}
+
+@keyframes lichessPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.profile-lichess-body {
+  padding: 0 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.profile-lichess-input-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.profile-lichess-input {
+  flex: 1;
+  padding: 0.6rem 0.85rem;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  color: var(--on-surface);
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.profile-lichess-input::placeholder {
+  color: var(--outline);
+}
+
+.profile-lichess-input:focus {
+  border-color: var(--primary);
+  background: var(--surface-container);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.profile-lichess-connect-btn {
+  padding: 0.6rem 1.25rem;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-container) 100%);
+  color: var(--on-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.profile-lichess-connect-btn:hover:not(:disabled) {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  transform: translateY(-1px);
+}
+
+.profile-lichess-connect-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.profile-lichess-btn-group {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.profile-lichess-refresh-btn {
+  padding: 0.5rem 0.65rem;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  color: var(--primary);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.profile-lichess-refresh-btn:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: var(--primary);
+}
+
+.profile-lichess-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.profile-lichess-unlink-btn {
+  padding: 0.5rem 0.85rem;
+  background: rgba(255, 180, 171, 0.06);
+  border: 1px solid rgba(255, 180, 171, 0.2);
+  border-radius: var(--radius-md);
+  color: var(--error);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.profile-lichess-unlink-btn:hover {
+  background: rgba(255, 180, 171, 0.15);
+  border-color: var(--error);
+}
+
+.profile-lichess-error {
+  font-size: 0.78rem;
+  color: var(--error);
+  padding: 0.4rem 0.65rem;
+  background: rgba(255, 180, 171, 0.06);
+  border-radius: var(--radius-md);
+}
+
+.profile-lichess-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.75rem;
+  background: rgba(78, 222, 163, 0.04);
+  border: 1px solid rgba(78, 222, 163, 0.1);
+  border-radius: var(--radius-md);
+}
+
+.profile-lichess-info-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.profile-lichess-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+}
+
+.profile-lichess-info-games {
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+}
+
+/* ── Lichess Ratings Section ── */
+.profile-lichess-ratings {
+  animation: fadeInUp 0.4s ease;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.profile-lichess-ratings-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 0.25rem;
+  color: var(--outline);
+}
+
+.profile-lichess-ratings-header h4 {
+  font-family: var(--font-headline);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--outline);
+  letter-spacing: 0.12em;
+  flex: 1;
+}
+
+.profile-lichess-username-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--secondary);
+  background: rgba(78, 222, 163, 0.08);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+.profile-rating-card--lichess {
+  border: 1px solid rgba(78, 222, 163, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-rating-card--lichess::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--secondary), rgba(78, 222, 163, 0.2));
+}
+
+.profile-lichess-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--secondary);
+  background: rgba(78, 222, 163, 0.08);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  margin-bottom: 0.35rem;
+}
+
+.profile-rating-title--lichess {
+  color: var(--secondary) !important;
+}
+
+.profile-lichess-perf-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.35rem;
+}
+
+.profile-lichess-games-count {
+  font-size: 0.72rem;
+  color: var(--on-surface-variant);
+}
+
+.profile-lichess-prog {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+}
+
+.profile-lichess-prog.prog-up {
+  color: var(--secondary);
+  background: rgba(78, 222, 163, 0.08);
+}
+
+.profile-lichess-prog.prog-down {
+  color: var(--error);
+  background: rgba(255, 180, 171, 0.08);
+}
+
 /* ── Responsive ── */
 @media (max-width: 1024px) {
   .profile-two-col {

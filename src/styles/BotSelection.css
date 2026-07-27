@@ -1,0 +1,170 @@
+/* BotSelection.css */
+
+.bot-selection-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--surface);
+  color: var(--on-surface);
+}
+
+.bot-selection-main {
+  flex: 1;
+  padding: 1.5rem 2rem 2.5rem;
+  overflow-y: auto;
+}
+
+.bot-selection-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.bot-selection-title {
+  font-family: var(--font-headline);
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bot-selection-subtitle {
+  margin: 0;
+  color: var(--on-surface-variant);
+  font-size: 0.95rem;
+}
+
+.bot-selection-back {
+  color: var(--on-surface-variant);
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: var(--radius-md);
+  background: var(--surface-container-high);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.bot-selection-back:hover {
+  color: var(--primary);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.bot-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.bot-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1.25rem;
+  background: var(--surface-container);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--outline-variant);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.25s ease;
+  box-shadow: var(--shadow-ambient);
+}
+
+.bot-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--bot-accent, var(--primary));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 0 0 1px color-mix(in srgb, var(--bot-accent, var(--primary)) 30%, transparent);
+}
+
+.bot-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bot-card-avatar {
+  font-size: 2.5rem;
+  line-height: 1;
+  width: 3.5rem;
+  height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bot-accent, var(--primary)) 15%, var(--surface-container-high));
+  border-radius: var(--radius-lg);
+}
+
+.bot-card-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bot-accent, var(--primary)) 20%, transparent);
+  color: var(--bot-accent, var(--primary));
+  border: 1px solid color-mix(in srgb, var(--bot-accent, var(--primary)) 35%, transparent);
+}
+
+.bot-card-name {
+  font-family: var(--font-headline);
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.bot-card-meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--on-surface-variant);
+}
+
+.bot-card-bio {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--on-surface-variant);
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bot-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--outline-variant);
+}
+
+.bot-card-detail {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+}
+
+.bot-card-label {
+  color: var(--on-surface-variant);
+  font-weight: 500;
+}
+
+.bot-card-cta {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--bot-accent, var(--primary));
+}
+
+@media (max-width: 768px) {
+  .bot-selection-main {
+    padding: 1rem;
+  }
+
+  .bot-selection-header {
+    flex-direction: column;
+  }
+}

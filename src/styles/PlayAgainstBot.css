@@ -1,0 +1,291 @@
+/* PlayAgainstBot.css — personality layer on PlayStockfish layout */
+
+.play-against-bot-root {
+  overflow-y: auto;
+  height: auto;
+  min-height: 100vh;
+  padding-bottom: 2rem;
+}
+
+.pab-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  max-width: 1200px;
+  margin-bottom: 0.5rem;
+}
+
+.pab-back-link {
+  color: var(--on-surface-variant);
+  text-decoration: none;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-md);
+  background: var(--surface-container-high);
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.pab-back-link:hover {
+  color: var(--primary);
+}
+
+.pab-title {
+  margin-bottom: 0;
+}
+
+.pab-main {
+  align-items: stretch;
+}
+
+.pab-opponent-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.65rem 0.25rem 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.pab-opponent-avatar {
+  font-size: 1.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bot-color, var(--primary)) 18%, var(--surface-container-high));
+  border-radius: var(--radius-md);
+}
+
+.pab-opponent-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.pab-opponent-sub {
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+}
+
+.pab-sidebar {
+  height: auto;
+  min-height: calc(min(70vh, 600px) + 20px);
+}
+
+.pab-profile-card {
+  background: var(--surface-container-low);
+  border-radius: var(--radius-lg);
+  padding: 0.85rem;
+  margin-bottom: 0.85rem;
+  border-left: 3px solid var(--bot-color, var(--primary));
+}
+
+.pab-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.5rem;
+}
+
+.pab-profile-avatar {
+  font-size: 1.75rem;
+}
+
+.pab-profile-name {
+  font-family: var(--font-headline);
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.pab-profile-meta {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--on-surface-variant);
+}
+
+.pab-profile-bio {
+  margin: 0 0 0.65rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--on-surface-variant);
+}
+
+.pab-profile-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.pab-tag {
+  font-size: 0.68rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: var(--surface-container-highest);
+  color: var(--on-surface-variant);
+}
+
+.pab-tag-difficulty {
+  background: color-mix(in srgb, var(--bot-color, var(--primary)) 20%, transparent);
+  color: var(--bot-color, var(--primary));
+  font-weight: 600;
+}
+
+.pab-start-btn {
+  background: linear-gradient(
+    135deg,
+    var(--bot-color, var(--primary)) 0%,
+    color-mix(in srgb, var(--bot-color, var(--primary)) 70%, #000) 100%
+  ) !important;
+  color: #fff !important;
+}
+
+/* Chat panel */
+.bot-chat-panel {
+  background: var(--surface-container-low);
+  border-radius: var(--radius-lg);
+  padding: 0.75rem;
+  margin-bottom: 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--bot-color, var(--primary)) 25%, var(--outline-variant));
+}
+
+.bot-chat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.bot-chat-avatar {
+  font-size: 1.25rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bot-color, var(--primary)) 15%, var(--surface-container-high));
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.bot-chat-meta {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.bot-chat-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.bot-chat-location {
+  font-size: 0.68rem;
+  color: var(--on-surface-variant);
+}
+
+.bot-chat-thinking-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bot-color, var(--primary)) 20%, transparent);
+  color: var(--bot-color, var(--primary));
+  animation: bot-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes bot-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+.bot-chat-bubble {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  padding: 0.65rem 0.75rem;
+  background: var(--surface-container);
+  border-radius: var(--radius-md);
+  border-top-left-radius: 0.15rem;
+  color: var(--on-surface);
+  min-height: 2.5rem;
+}
+
+/* Game over modal */
+.pab-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+
+.pab-modal {
+  background: var(--surface-container);
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  border: 1px solid color-mix(in srgb, var(--bot-color, var(--primary)) 30%, var(--outline-variant));
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.pab-modal-avatar {
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+}
+
+.pab-modal-title {
+  font-family: var(--font-headline);
+  font-size: 1.5rem;
+  margin: 0 0 0.35rem;
+}
+
+.pab-modal-subtitle {
+  margin: 0 0 0.75rem;
+  color: var(--on-surface-variant);
+  font-size: 0.9rem;
+}
+
+.pab-modal-message {
+  margin: 0 0 1.25rem;
+  padding: 0.75rem;
+  background: var(--surface-container-low);
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.pab-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.pab-modal-link {
+  color: var(--on-surface-variant);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.pab-modal-link:hover {
+  color: var(--primary);
+}
+
+@media (max-width: 900px) {
+  .pab-main {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .pab-sidebar {
+    width: min(100%, 600px);
+  }
+}

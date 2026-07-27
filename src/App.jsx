@@ -9,6 +9,8 @@ import { GameProvider } from './context/GameContext';
 import Landing from './pages/Landing';
 import Game from './pages/Game';
 import PlayStockfish from './pages/PlayStockfish';
+import BotSelection from './pages/BotSelection';
+import PlayAgainstBot from './pages/PlayAgainstBot';
 import PassAndPlay from './pages/PassAndPlay';
 import Evaluate from './pages/Evaluate';
 import SignIn from './pages/SignIn';
@@ -26,6 +28,8 @@ function App() {
               <Route path="/" element={<Landing />} />
               <Route path="/game" element={<Game />} />
               <Route path="/stockfish" element={<PlayStockfish />} />
+              <Route path="/play-bot" element={<BotSelection />} />
+              <Route path="/play-bot/:botId" element={<PlayAgainstBot />} />
               <Route path="/pass-play" element={<PassAndPlay />} />
               <Route path="/evaluate" element={<Evaluate />} />
               <Route path="/signin" element={<SignIn />} />

@@ -130,6 +130,10 @@ const Landing = () => {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M9 4V2" /><path d="M15 4V2" /><path d="M9 20v2" /><path d="M15 20v2" /><path d="M20 9h2" /><path d="M20 15h2" /><path d="M4 9H2" /><path d="M4 15H2" /></svg>
                 Play vs AI
               </Link>
+              <Link to="/play-bot" className="lobby-feature-chip">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" /><path d="M16 3.5a2.5 2.5 0 0 1 0 4" /><path d="M19 6h1" /></svg>
+                Play vs Bot
+              </Link>
               <Link to="/evaluate" className="lobby-feature-chip">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></svg>
                 Analysis

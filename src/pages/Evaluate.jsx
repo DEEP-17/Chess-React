@@ -24,14 +24,20 @@ const Evaluate = () => {
   const [optionSquares, setOptionSquares] = useState({});
   const [engineLines, setEngineLines] = useState([]); 
   const [aiMessage, setAiMessage] = useState("Ready to analyze!");
+  const [engineReady, setEngineReady] = useState(false);
   
   const stockfish = useRef(null);
+  const analysisFenRef = useRef(game.fen());
   const isViewingHistory = currentMoveIndex !== history.length;
 
   // Replay snapshots are derived from SAN and never replace the live game.
   useEffect(() => {
     setPositions(buildPositions(history));
   }, [history]);
+
+  useEffect(() => {
+    analysisFenRef.current = positions[currentMoveIndex] || game.fen();
+  }, [game, positions, currentMoveIndex]);
 
   // Auto-load PGN from URL param (from post-game "Analyze" button)
   useEffect(() => {
@@ -58,7 +64,16 @@ const Evaluate = () => {
     try {
       stockfish.current = new Worker('/stockfish.js');
       stockfish.current.onmessage = (event) => {
-        const message = event.data;
+        const message = String(event.data);
+        if (message === 'uciok') {
+          stockfish.current.postMessage('setoption name MultiPV value 3');
+          stockfish.current.postMessage('isready');
+          return;
+        }
+        if (message === 'readyok') {
+          setEngineReady(true);
+          return;
+        }
         if (message.startsWith('info') && message.includes('score') && message.includes('pv')) {
           const multipvMatch = message.match(/multipv (\d+)/);
           const lineIndex = multipvMatch ? parseInt(multipvMatch[1]) : 1;
@@ -74,7 +89,8 @@ const Evaluate = () => {
             rawScoreVal = moves > 0 ? 10000 : -10000; 
           } else if (cpMatch) {
             const cp = parseInt(cpMatch[1]);
-            const normalized = game.turn() === 'w' ? cp : -cp;
+            const displayedFen = analysisFenRef.current;
+            const normalized = displayedFen.split(' ')[1] === 'w' ? cp : -cp;
             rawScoreVal = normalized;
             scoreDisplay = (normalized / 100).toFixed(2);
             if (parseFloat(scoreDisplay) > 0) scoreDisplay = "+" + scoreDisplay;
@@ -92,22 +108,20 @@ const Evaluate = () => {
         }
       };
       stockfish.current.postMessage('uci');
-      stockfish.current.postMessage('setoption name MultiPV value 3'); 
-      stockfish.current.postMessage('isready');
     } catch (error) { console.error(error); }
     return () => { if (stockfish.current) stockfish.current.terminate(); };
   }, []);
 
   // Trigger Analysis
   useEffect(() => {
-    if (stockfish.current) {
+    if (stockfish.current && engineReady) {
       setEngineLines([]); 
       setAiMessage("Thinking...");
       stockfish.current.postMessage('stop');
       stockfish.current.postMessage(`position fen ${positions[currentMoveIndex] || game.fen()}`);
       stockfish.current.postMessage('go depth 15');
     }
-  }, [game, positions, currentMoveIndex]);
+  }, [game, positions, currentMoveIndex, engineReady]);
 
   // AI Message Update
   useEffect(() => {

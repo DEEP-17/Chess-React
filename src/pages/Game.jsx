@@ -51,7 +51,8 @@ const Game = () => {
 
   /* ═══ MOVE TRACKING ═══ */
   const [moveHistory, setMoveHistory] = useState([{ fen: new Chess().fen(), san: null }]);
-  const [viewingMoveIndex, setViewingMoveIndex] = useState(-1);
+  // 0 is the initial position and the final slot is always the live position.
+  const [viewingMoveIndex, setViewingMoveIndex] = useState(0);
   const [moveFrom, setMoveFrom] = useState('');
   const [optionSquares, setOptionSquares] = useState({});
 
@@ -149,8 +150,11 @@ const Game = () => {
         if (gameCopy.inCheck()) checkSound.play().catch(() => {});
 
         setGame(new Chess(gameCopy.fen()));
-        setMoveHistory(prev => [...prev, { fen: gameCopy.fen(), san: move.san }]);
-        setViewingMoveIndex(-1);
+        setMoveHistory(prev => {
+          const next = [...prev, { fen: gameCopy.fen(), san: move.san }];
+          setViewingMoveIndex(next.length - 1);
+          return next;
+        });
         setIsComputerThinking(false);
 
         if (gameCopy.isGameOver()) handleGameEnd(gameCopy);
@@ -183,7 +187,7 @@ const Game = () => {
       setBlackTime(t);
       setGame(new Chess());
       setMoveHistory([{ fen: new Chess().fen(), san: null }]);
-      setViewingMoveIndex(-1);
+      setViewingMoveIndex(0);
       setMoveFrom('');
       setOptionSquares({});
       setMessages([]);
@@ -198,7 +202,6 @@ const Game = () => {
       locallyPlayedFenRef.current = null;
       const newGame = new Chess(data.fen);
       setGame(newGame);
-      setViewingMoveIndex(-1);
       setWhiteTime(parseTimeStr(data.whiteTime));
       setBlackTime(parseTimeStr(data.blackTime));
       setMoveHistory(prev => {
@@ -212,7 +215,9 @@ const Game = () => {
             if (t.fen() === data.fen) { san = m.san; break; }
           }
         } catch (e) { /* ignore */ }
-        return [...prev, { fen: data.fen, san }];
+        const next = [...prev, { fen: data.fen, san }];
+        setViewingMoveIndex(next.length - 1);
+        return next;
       });
       setMoveFrom('');
       setOptionSquares({});
@@ -262,7 +267,7 @@ const Game = () => {
     setGame(newGame);
     setGamePhase('playing');
     setMoveHistory([{ fen: newGame.fen(), san: null }]);
-    setViewingMoveIndex(-1);
+    setViewingMoveIndex(0);
     setMoveFrom('');
     setOptionSquares({});
     setMessages([]);
@@ -295,7 +300,7 @@ const Game = () => {
   function canMakeMove() {
     if (gamePhase !== 'playing') return false;
     if (isComputerThinking) return false;
-    if (viewingMoveIndex !== -1) return false;
+    if (viewingMoveIndex !== moveHistory.length - 1) return false;
     if (gameMode === 'pass_and_play') return true;
     return game.turn() === playerColor;
   }
@@ -310,8 +315,11 @@ const Game = () => {
       else moveSound.play().catch(() => {});
 
       setGame(new Chess(gameCopy.fen()));
-      setMoveHistory(prev => [...prev, { fen: gameCopy.fen(), san: move.san }]);
-      setViewingMoveIndex(-1);
+      setMoveHistory(prev => {
+        const next = [...prev, { fen: gameCopy.fen(), san: move.san }];
+        setViewingMoveIndex(next.length - 1);
+        return next;
+      });
       setMoveFrom('');
       setOptionSquares({});
 
@@ -511,7 +519,7 @@ const Game = () => {
     setGameOverInfo(null);
     setGame(new Chess());
     setMoveHistory([{ fen: new Chess().fen(), san: null }]);
-    setViewingMoveIndex(-1);
+    setViewingMoveIndex(0);
     setIsSearching(false);
     setFriendSubStep(null);
     setCreatedRoomCode(null);
@@ -532,19 +540,26 @@ const Game = () => {
   }
 
   function goToAnalysis() {
-    const pgn = game.pgn();
+    // `game` is intentionally recreated from FEN after each live move, so its
+    // internal PGN stack is not a reliable source. The dedicated timeline is.
+    const pgn = moveHistory
+      .slice(1)
+      .map((entry) => entry.san)
+      .filter((san) => san && san !== '?')
+      .map((san, index) => `${index % 2 === 0 ? `${Math.floor(index / 2) + 1}. ` : ''}${san}`)
+      .join(' ');
     navigate(`/evaluate?pgn=${encodeURIComponent(pgn)}`);
   }
 
   /* ═══ NAVIGATION ═══ */
   function goToMove(idx) {
     if (idx < 0 || idx >= moveHistory.length) return;
-    setViewingMoveIndex(idx === moveHistory.length - 1 ? -1 : idx);
+    setViewingMoveIndex(idx);
   }
   function navFirst() { goToMove(0); }
-  function navPrev() { const c = viewingMoveIndex === -1 ? moveHistory.length - 1 : viewingMoveIndex; goToMove(Math.max(0, c - 1)); }
-  function navNext() { const c = viewingMoveIndex === -1 ? moveHistory.length - 1 : viewingMoveIndex; goToMove(Math.min(moveHistory.length - 1, c + 1)); }
-  function navLast() { setViewingMoveIndex(-1); }
+  function navPrev() { goToMove(Math.max(0, viewingMoveIndex - 1)); }
+  function navNext() { goToMove(Math.min(moveHistory.length - 1, viewingMoveIndex + 1)); }
+  function navLast() { setViewingMoveIndex(moveHistory.length - 1); }
 
   /* ═══ UTILITY ═══ */
   function parseTimeStr(ts) {
@@ -576,9 +591,9 @@ const Game = () => {
 
   /* ═══ COMPUTED VALUES ═══ */
   const sanMoves = moveHistory.slice(1).map(m => m.san);
-  const isViewingHistory = viewingMoveIndex !== -1;
-  const displayFen = isViewingHistory ? moveHistory[viewingMoveIndex].fen : game.fen();
-  const activeMoveIdx = isViewingHistory ? viewingMoveIndex : moveHistory.length - 1;
+  const isViewingHistory = viewingMoveIndex !== moveHistory.length - 1;
+  const displayFen = moveHistory[viewingMoveIndex]?.fen ?? game.fen();
+  const activeMoveIdx = viewingMoveIndex;
   const isOnline = gameMode === 'online_random' || gameMode === 'online_friend';
 
   const topPlayerColor = useMemo(() => {

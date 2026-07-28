@@ -11,6 +11,7 @@ const OpeningExplorer = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [moveHistory, setMoveHistory] = useState([]);
+  const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
 
   // Click-to-move state
   const [moveFrom, setMoveFrom] = useState('');
@@ -65,6 +66,7 @@ const OpeningExplorer = () => {
       if (!result) return false;
       setGame(gameCopy);
       setMoveHistory(gameCopy.history());
+      setCurrentMoveIndex(gameCopy.history().length);
       setMoveFrom('');
       setOptionSquares({});
       return true;
@@ -102,6 +104,7 @@ const OpeningExplorer = () => {
       gameCopy.move(san);
       setGame(gameCopy);
       setMoveHistory(gameCopy.history());
+      setCurrentMoveIndex(gameCopy.history().length);
       setMoveFrom('');
       setOptionSquares({});
     } catch (err) {
@@ -114,6 +117,7 @@ const OpeningExplorer = () => {
     const g = new Chess();
     for (let i = 0; i <= idx; i++) g.move(moveHistory[i]);
     setGame(g);
+    setCurrentMoveIndex(Math.max(0, idx + 1));
     setMoveFrom('');
     setOptionSquares({});
   }
@@ -121,6 +125,7 @@ const OpeningExplorer = () => {
   function resetBoard() {
     setGame(new Chess());
     setMoveHistory([]);
+    setCurrentMoveIndex(0);
     setMoveFrom('');
     setOptionSquares({});
   }
@@ -184,7 +189,7 @@ const OpeningExplorer = () => {
                   moveHistory.map((m, i) => (
                     <span
                       key={i}
-                      className={`oe-move ${i === moveHistory.length - 1 ? 'oe-move--active' : ''}`}
+                      className={`oe-move ${i + 1 === currentMoveIndex ? 'oe-move--active' : ''}`}
                       onClick={() => navigateTo(i)}
                     >
                       {i % 2 === 0 ? `${Math.floor(i / 2) + 1}. ` : ''}
@@ -208,18 +213,10 @@ const OpeningExplorer = () => {
                 <button
                   className="oe-nav-btn"
                   onClick={() =>
-                    moveHistory.length > 0 &&
-                    navigateTo(
-                      Math.max(
-                        -1,
-                        moveHistory.indexOf(
-                          moveHistory[moveHistory.length - 1]
-                        ) - 1
-                      )
-                    )
+                    currentMoveIndex > 0 && navigateTo(currentMoveIndex - 2)
                   }
                   title="Back"
-                  disabled={moveHistory.length === 0}
+                  disabled={currentMoveIndex === 0}
                 >
                   ◀
                 </button>

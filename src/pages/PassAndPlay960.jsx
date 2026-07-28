@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
+import useMoveHistory from '../hooks/useMoveHistory';
 
 // --- Chess960 Generator Functions ---
 const generateChess960Position = () => {
@@ -55,8 +56,7 @@ const PassAndPlay960 = () => {
   const [blackTime, setBlackTime] = useState(300);
   const [initialTime, setInitialTime] = useState(5);
 
-  const [history, setHistory] = useState([initialRandomFen]);
-  const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
+  const { history, currentMoveIndex, displayFen: displayPosition, resetHistory, recordPosition, goTo, previous, next, live } = useMoveHistory(initialRandomFen);
 
   // --- NEW: Highlighting State ---
   const [moveFrom, setMoveFrom] = useState('');
@@ -76,9 +76,7 @@ const PassAndPlay960 = () => {
       setGame(gameCopy);
       setBoardOrientation(gameCopy.turn() === 'w' ? 'white' : 'black');
 
-      const newHistory = [...history, gameCopy.fen()];
-      setHistory(newHistory);
-      setCurrentMoveIndex(newHistory.length - 1);
+      recordPosition(gameCopy.fen());
 
       // NEW: Clear highlights after successful move
       setMoveFrom('');
@@ -222,8 +220,7 @@ const PassAndPlay960 = () => {
     setBoardOrientation('white');
     setWhiteTime(initialTime * 60);
     setBlackTime(initialTime * 60);
-    setHistory([startFen]);
-    setCurrentMoveIndex(0);
+    resetHistory(startFen);
     setMoveFrom('');
     setOptionSquares({});
   };
@@ -249,13 +246,11 @@ const PassAndPlay960 = () => {
     alert('Moves copied to clipboard!');
   };
 
-  const navFirst = () => setCurrentMoveIndex(0);
-  const navPrev = () =>
-    setCurrentMoveIndex((prev) => Math.max(0, prev - 1));
-  const navNext = () =>
-    setCurrentMoveIndex((prev) => Math.min(history.length - 1, prev + 1));
-  const navLast = () => setCurrentMoveIndex(history.length - 1);
-  const navStop = () => setCurrentMoveIndex(history.length - 1);
+  const navFirst = () => goTo(0);
+  const navPrev = previous;
+  const navNext = next;
+  const navLast = live;
+  const navStop = live;
 
   // Clear selection if navigating history
   useEffect(() => {
@@ -284,8 +279,6 @@ const PassAndPlay960 = () => {
 
   const formatTime = (t) =>
     `${Math.floor(t / 60)}:${(t % 60).toString().padStart(2, '0')}`;
-
-  const displayPosition = history[currentMoveIndex];
 
   const isDraggable = gameActive &&
                       currentMoveIndex === history.length - 1 &&

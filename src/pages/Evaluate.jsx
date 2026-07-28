@@ -4,21 +4,34 @@ import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import '../styles/Evaluate.css';
 
+const buildPositions = (moves) => {
+  const replay = new Chess();
+  const positions = [replay.fen()];
+  moves.forEach((move) => { replay.move(move); positions.push(replay.fen()); });
+  return positions;
+};
+
 const Evaluate = () => {
   const [searchParams] = useSearchParams();
   const [game, setGame] = useState(new Chess());
   const [pgnInput, setPgnInput] = useState('');
-  const [currentMoveIndex, setCurrentMoveIndex] = useState(-1);
+  const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
   const [history, setHistory] = useState([]);
+  const [positions, setPositions] = useState([new Chess().fen()]);
   
   // Highlighting & Analysis State
   const [moveFrom, setMoveFrom] = useState('');
   const [optionSquares, setOptionSquares] = useState({});
-  const [isViewingHistory, setIsViewingHistory] = useState(false);
   const [engineLines, setEngineLines] = useState([]); 
   const [aiMessage, setAiMessage] = useState("Ready to analyze!");
   
   const stockfish = useRef(null);
+  const isViewingHistory = currentMoveIndex !== history.length;
+
+  // Replay snapshots are derived from SAN and never replace the live game.
+  useEffect(() => {
+    setPositions(buildPositions(history));
+  }, [history]);
 
   // Auto-load PGN from URL param (from post-game "Analyze" button)
   useEffect(() => {
@@ -27,10 +40,11 @@ const Evaluate = () => {
       try {
         const g = new Chess();
         g.loadPgn(decodeURIComponent(pgn));
+        const moves = g.history();
         setGame(g);
-        setHistory(g.history());
-        setCurrentMoveIndex(g.history().length - 1);
-        setIsViewingHistory(false);
+        setHistory(moves);
+        setPositions(buildPositions(moves));
+        setCurrentMoveIndex(moves.length);
         setMoveFrom('');
         setOptionSquares({});
       } catch (e) {
@@ -90,10 +104,10 @@ const Evaluate = () => {
       setEngineLines([]); 
       setAiMessage("Thinking...");
       stockfish.current.postMessage('stop');
-      stockfish.current.postMessage(`position fen ${game.fen()}`);
+      stockfish.current.postMessage(`position fen ${positions[currentMoveIndex] || game.fen()}`);
       stockfish.current.postMessage('go depth 15');
     }
-  }, [game]);
+  }, [game, positions, currentMoveIndex]);
 
   // AI Message Update
   useEffect(() => {
@@ -133,7 +147,8 @@ const Evaluate = () => {
     try {
       const copy = new Chess(game.fen());
       if (!copy.move({ from: source, to: target, promotion: 'q' })) return false;
-      setGame(copy); setHistory(copy.history()); setCurrentMoveIndex(prev => prev+1);
+      const moves = copy.history();
+      setGame(copy); setHistory(moves); setPositions(buildPositions(moves)); setCurrentMoveIndex(moves.length);
       setMoveFrom(''); setOptionSquares({});
       return true;
     } catch { return false; }
@@ -144,7 +159,8 @@ const Evaluate = () => {
     if (optionSquares[square] && moveFrom) {
       const copy = new Chess(game.fen());
       if (copy.move({ from: moveFrom, to: square, promotion: 'q' })) {
-        setGame(copy); setHistory(copy.history()); setCurrentMoveIndex(prev => prev+1);
+        const moves = copy.history();
+        setGame(copy); setHistory(moves); setPositions(buildPositions(moves)); setCurrentMoveIndex(moves.length);
         setMoveFrom(''); setOptionSquares({});
         return;
       }
@@ -158,19 +174,18 @@ const Evaluate = () => {
     try {
       const newGame = new Chess();
       newGame.loadPgn(pgnInput);
+      const moves = newGame.history();
       setGame(newGame);
-      setHistory(newGame.history());
-      setCurrentMoveIndex(newGame.history().length - 1);
-      setMoveFrom(''); setOptionSquares({}); setIsViewingHistory(false);
+      setHistory(moves);
+      setPositions(buildPositions(moves));
+      setCurrentMoveIndex(moves.length);
+      setMoveFrom(''); setOptionSquares({});
       setPgnInput(''); 
     } catch { alert('Invalid PGN'); }
   };
 
   const navigateTo = (idx) => {
-    const g = new Chess();
-    for(let i=0; i<=idx; i++) g.move(history[i]);
-    setGame(g); setCurrentMoveIndex(idx);
-    setIsViewingHistory(idx < history.length - 1);
+    setCurrentMoveIndex(Math.max(0, Math.min(idx, history.length)));
     setMoveFrom(''); setOptionSquares({});
   };
 
@@ -196,10 +211,10 @@ const Evaluate = () => {
 
           <div className="evaluate-board-wrapper">
             <Chessboard 
-              position={game.fen()} 
+              position={positions[currentMoveIndex] || game.fen()}
               onPieceDrop={onDrop}
               onSquareClick={onSquareClick}
-              arePiecesDraggable={() => !isViewingHistory}
+              arePiecesDraggable={currentMoveIndex === history.length}
               customSquareStyles={optionSquares}
               customDarkSquareStyle={{ backgroundColor: '#b8941f' }} /* Gold Dark */
               customLightSquareStyle={{ backgroundColor: '#ffffff' }} /* White */
@@ -255,8 +270,8 @@ const Evaluate = () => {
             {history.length === 0 ? "Moves will appear here..." : history.map((m, i) => (
               <span 
                 key={i} 
-                className={`pgn-move ${i === currentMoveIndex ? 'active' : ''}`}
-                onClick={() => navigateTo(i)}
+                className={`pgn-move ${i + 1 === currentMoveIndex ? 'active' : ''}`}
+                onClick={() => navigateTo(i + 1)}
               >
                 {i % 2 === 0 ? `${Math.floor(i/2) + 1}.` : ''}{m}
               </span>
@@ -265,10 +280,10 @@ const Evaluate = () => {
 
           {/* 5. Navigation */}
           <div className="evaluate-nav-buttons">
-            <button className="eval-nav-btn nav-first" onClick={() => navigateTo(-1)}>|◀</button>
-            <button className="eval-nav-btn nav-prev" onClick={() => currentMoveIndex >= 0 && navigateTo(currentMoveIndex - 1)}>◀</button>
-            <button className="eval-nav-btn nav-next" onClick={() => currentMoveIndex < history.length - 1 && navigateTo(currentMoveIndex + 1)}>▶</button>
-            <button className="eval-nav-btn nav-last" onClick={() => navigateTo(history.length - 1)}>▶|</button>
+            <button className="eval-nav-btn nav-first" onClick={() => navigateTo(0)}>|◀</button>
+            <button className="eval-nav-btn nav-prev" onClick={() => navigateTo(currentMoveIndex - 1)}>◀</button>
+            <button className="eval-nav-btn nav-next" onClick={() => navigateTo(currentMoveIndex + 1)}>▶</button>
+            <button className="eval-nav-btn nav-last" onClick={() => navigateTo(history.length)}>▶|</button>
           </div>
 
         </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
+import useMoveHistory from '../hooks/useMoveHistory';
 import '../styles/PlayStockfish.css';
 
 const PlayStockfish = () => {
@@ -13,8 +14,7 @@ const PlayStockfish = () => {
   const [isComputerThinking, setIsComputerThinking] = useState(false);
 
   // Navigation State
-  const [history, setHistory] = useState([new Chess().fen()]);
-  const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
+  const { history, currentMoveIndex, displayFen: displayPosition, resetHistory, recordPosition, goTo, previous, next, live } = useMoveHistory(new Chess().fen());
 
   // Click-to-Move & Highlighting
   const [moveFrom, setMoveFrom] = useState('');
@@ -80,9 +80,7 @@ const PlayStockfish = () => {
         setMoveFrom('');
         setOptionSquares({});
 
-        const newHistory = [...history, gameCopy.fen()];
-        setHistory(newHistory);
-        setCurrentMoveIndex(newHistory.length - 1);
+        recordPosition(gameCopy.fen());
 
         if (gameCopy.isGameOver()) {
           setGameActive(false);
@@ -179,8 +177,7 @@ const PlayStockfish = () => {
     const newGame = new Chess();
     setGame(newGame);
     setGameActive(true);
-    setHistory([newGame.fen()]);
-    setCurrentMoveIndex(0);
+    resetHistory(newGame.fen());
     setIsComputerThinking(false);
     setMoveFrom('');
     setOptionSquares({});
@@ -210,13 +207,11 @@ const PlayStockfish = () => {
     alert("Moves copied to clipboard!");
   };
 
-  const navFirst = () => setCurrentMoveIndex(0);
-  const navPrev = () => setCurrentMoveIndex(prev => Math.max(0, prev - 1));
-  const navNext = () => setCurrentMoveIndex(prev => Math.min(history.length - 1, prev + 1));
-  const navLast = () => setCurrentMoveIndex(history.length - 1);
-  const navStop = () => setCurrentMoveIndex(history.length - 1);
-
-  const displayPosition = history[currentMoveIndex] || game.fen();
+  const navFirst = () => goTo(0);
+  const navPrev = previous;
+  const navNext = next;
+  const navLast = live;
+  const navStop = live;
 
   return (
     <div className="stockfish-root">

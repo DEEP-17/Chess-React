@@ -429,16 +429,73 @@
   }
 }
 
-@media (max-width: 600px) {
-  .lobby-right-panel {
-    flex-direction: column;
-  }
-
+@media (max-width: 768px) {
   .lobby-topbar {
     padding: 0.75rem 1rem;
   }
 
   .lobby-content {
     padding: 1rem;
+  }
+
+  .lobby-right-panel {
+    flex-direction: column;
+  }
+
+  .lobby-action-card {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+
+  .lobby-action-card-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+  }
+
+  .lobby-action-card-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .lobby-action-card-text h3 {
+    font-size: 0.95rem;
+  }
+
+  .lobby-action-card-text p {
+    font-size: 0.75rem;
+  }
+
+  .lobby-find-match-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.7rem;
+  }
+
+  .lobby-feature-row {
+    gap: 0.5rem;
+  }
+
+  .lobby-feature-chip {
+    padding: 0.45rem 0.75rem;
+    font-size: 0.72rem;
+  }
+
+  .lobby-brand {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .lobby-topbar-left {
+    gap: 0.75rem;
+  }
+
+  .lobby-online-badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.6rem;
+  }
+
+  .lobby-action-card-text p {
+    display: none;
   }
 }

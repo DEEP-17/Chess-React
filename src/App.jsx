@@ -17,6 +17,11 @@ import SignIn from './pages/SignIn';
 import Rules from './pages/Rules';
 import Profile from './pages/Profile';
 import PassAndPlay960 from './pages/PassAndPlay960';
+import OpeningExplorer from './pages/OpeningExplorer';
+import Tablebase from './pages/Tablebase';
+import Leaderboard from './pages/Leaderboard';
+import LichessPlayer from './pages/LichessPlayer';
+import GameViewer from './pages/GameViewer';
 
 function App() {
   return (
@@ -36,6 +41,12 @@ function App() {
               <Route path="/rules" element={<Rules />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/PassAndPlay960" element={<PassAndPlay960 />} />
+              <Route path="/opening-explorer" element={<OpeningExplorer />} />
+              <Route path="/tablebase" element={<Tablebase />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/lichess-player" element={<LichessPlayer />} />
+              <Route path="/lichess-player/:username" element={<LichessPlayer />} />
+              <Route path="/game-viewer" element={<GameViewer />} />
             </Routes>
           </Router>
         </GameProvider>

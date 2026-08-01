@@ -30,6 +30,23 @@ const LiveTV = () => {
   const streamController = useRef(null);
   const gameRef = useRef(new Chess());
 
+  // Dynamic board sizing
+  const boardContainerRef = useRef(null);
+  const [boardSize, setBoardSize] = useState(260);
+
+  useEffect(() => {
+    const updateSize = () => {
+      if (boardContainerRef.current) {
+        const width = boardContainerRef.current.offsetWidth;
+        setBoardSize(Math.min(width, 300));
+      }
+    };
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    if (boardContainerRef.current) observer.observe(boardContainerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   // Fetch channel list for tabs + mini channel list
   useEffect(() => {
     let cancelled = false;
@@ -186,11 +203,11 @@ const LiveTV = () => {
             <span className="ltv-player-rating">{streamPlayers.black.rating}</span>
           </div>
 
-          <div className="ltv-board-wrap">
+          <div className="ltv-board-wrap" ref={boardContainerRef}>
             <Chessboard
               id="LiveTVBoard"
               position={streamFen}
-              boardWidth={260}
+              boardWidth={boardSize}
               arePiecesDraggable={false}
               customDarkSquareStyle={{ backgroundColor: '#272a2e' }}
               customLightSquareStyle={{ backgroundColor: '#3d4147' }}
@@ -232,7 +249,7 @@ const LiveTV = () => {
             <Chessboard
               id="LiveTVBoardFallback"
               position="start"
-              boardWidth={260}
+              boardWidth={boardSize}
               arePiecesDraggable={false}
               customDarkSquareStyle={{ backgroundColor: '#272a2e' }}
               customLightSquareStyle={{ backgroundColor: '#3d4147' }}

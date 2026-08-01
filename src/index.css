@@ -138,3 +138,36 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-headline);
   letter-spacing: -0.02em;
 }
+
+/* ── Mobile: Bottom nav spacing ── */
+@media (max-width: 768px) {
+  /* Add padding to main scroll areas so content isn't hidden behind bottom nav */
+  .lobby-main,
+  .game-main,
+  .oe-main,
+  .tb-main,
+  .lb-main,
+  .lp-main,
+  .gv-main,
+  .profile-main {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Ensure touch targets are at least 44px */
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Override for small inline elements that shouldn't be 44px */
+  .dp-theme-chip,
+  .lobby-feature-chip,
+  .oe-move,
+  .gv-move,
+  .tb-history-move,
+  .lb-tab,
+  .ltv-tab {
+    min-height: unset;
+    min-width: unset;
+  }
+}

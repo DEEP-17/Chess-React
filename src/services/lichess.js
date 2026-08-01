@@ -159,3 +159,74 @@ export async function getTablebase(fen) {
   setCache(cacheKey, data);
   return data;
 }
+
+// ─── Leaderboard ────────────────────────────────────────────
+/**
+ * Fetch top players for a given perf type.
+ * @param {'bullet'|'blitz'|'rapid'|'classical'|'ultraBullet'|'chess960'|'crazyhouse'|'antichess'|'atomic'|'horde'|'kingOfTheHill'|'racingKings'|'threeCheck'} perf
+ * @param {number} nb – number of players (max 200)
+ */
+export async function getLeaderboard(perf = 'blitz', nb = 50) {
+  const cacheKey = `leaderboard_${perf}_${nb}`;
+  const cached = getCached(cacheKey, 5 * 60 * 1000); // 5 min TTL
+  if (cached) return cached;
+
+  const data = await rateLimitedFetch(
+    `${LICHESS_API}/player/top/${nb}/${perf}`
+  );
+  setCache(cacheKey, data);
+  return data;
+}
+
+// ─── Rating History ─────────────────────────────────────────
+export async function getRatingHistory(username) {
+  const cacheKey = `rating_history_${username}`;
+  const cached = getCached(cacheKey, 10 * 60 * 1000); // 10 min TTL
+  if (cached) return cached;
+
+  const data = await rateLimitedFetch(
+    `${LICHESS_API}/user/${username}/rating-history`
+  );
+  setCache(cacheKey, data);
+  return data;
+}
+
+// ─── Export Game by ID ──────────────────────────────────────
+/**
+ * Fetch a single Lichess game by its ID.
+ * Returns JSON with moves, players, opening, clocks, etc.
+ */
+export async function getGame(gameId) {
+  const cacheKey = `game_${gameId}`;
+  const cached = getCached(cacheKey, 60 * 60 * 1000); // 1 hour TTL (games don't change)
+  if (cached) return cached;
+
+  const now = Date.now();
+  const elapsed = now - lastRequestTime;
+  if (elapsed < 1000) {
+    await new Promise((resolve) => setTimeout(resolve, 1000 - elapsed));
+  }
+  lastRequestTime = Date.now();
+
+  const res = await fetch(
+    `https://lichess.org/game/export/${gameId}?clocks=true&opening=true`,
+    { headers: { Accept: 'application/json' } }
+  );
+  if (!res.ok) throw new Error(`Lichess API error: ${res.status}`);
+  const data = await res.json();
+  setCache(cacheKey, data);
+  return data;
+}
+
+// ─── User Activity ──────────────────────────────────────────
+export async function getUserActivity(username) {
+  const cacheKey = `activity_${username}`;
+  const cached = getCached(cacheKey, 5 * 60 * 1000); // 5 min TTL
+  if (cached) return cached;
+
+  const data = await rateLimitedFetch(
+    `${LICHESS_API}/user/${username}/activity`
+  );
+  setCache(cacheKey, data);
+  return data;
+}

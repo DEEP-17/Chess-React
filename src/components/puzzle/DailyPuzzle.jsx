@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { getDailyPuzzle } from '../../services/lichess';
@@ -11,6 +11,23 @@ export default function DailyPuzzle() {
 
   // States: 'loading' | 'playing' | 'wrong' | 'solved' | 'error'
   const [status, setStatus] = useState('loading');
+
+  // Dynamic board sizing
+  const boardContainerRef = useRef(null);
+  const [boardSize, setBoardSize] = useState(280);
+
+  useEffect(() => {
+    const updateSize = () => {
+      if (boardContainerRef.current) {
+        const width = boardContainerRef.current.offsetWidth;
+        setBoardSize(Math.min(width, 320));
+      }
+    };
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    if (boardContainerRef.current) observer.observe(boardContainerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     // 1. Fetch the puzzle from the Lichess API service
@@ -143,13 +160,13 @@ export default function DailyPuzzle() {
         {puzzle && <span className="dp-rating">⭐ {puzzle.rating}</span>}
       </div>
 
-      <div className="dp-board-wrap">
+      <div className="dp-board-wrap" ref={boardContainerRef}>
         <Chessboard
           id="DailyPuzzleBoard"
           position={game.fen()}
           onPieceDrop={onPieceDrop}
           boardOrientation={boardOrientation}
-          boardWidth={280}
+          boardWidth={boardSize}
           arePiecesDraggable={status === 'playing'}
           animationDuration={200}
           customDarkSquareStyle={{ backgroundColor: '#272a2e' }}

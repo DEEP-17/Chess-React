@@ -359,3 +359,17 @@
 .auth-notification.error {
   border-left-color: var(--error);
 }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .signin-page {
+    padding: 1rem 0.75rem;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 480px) {
+  .signin-page {
+    padding: 0.75rem 0.5rem;
+  }
+}

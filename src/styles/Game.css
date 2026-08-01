@@ -1429,3 +1429,35 @@
     justify-content: center;
   }
 }
+
+@media (max-width: 480px) {
+  .game-chessboard-wrap {
+    width: min(90vw, 360px);
+    height: min(90vw, 360px);
+  }
+
+  .game-player-bar {
+    width: min(90vw, 360px);
+  }
+
+  .game-right-panel {
+    height: 220px;
+  }
+
+  .game-topbar {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .game-brand {
+    font-size: 1rem;
+  }
+
+  .game-wizard-card {
+    padding: 1rem 0.75rem 1.5rem;
+  }
+
+  .game-time-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.4rem;
+  }
+}

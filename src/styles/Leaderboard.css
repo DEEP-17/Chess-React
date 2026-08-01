@@ -1,0 +1,347 @@
+/* ═══ Leaderboard ═══ */
+.lb-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--surface);
+}
+
+.lb-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.lb-topbar {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 1.25rem 2rem 0.75rem;
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.lb-brand {
+  font-family: var(--font-headline);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--on-surface);
+  letter-spacing: -0.02em;
+}
+
+.lb-subtitle {
+  font-size: 0.8rem;
+  color: var(--outline);
+  font-weight: 500;
+}
+
+/* ── Tabs ── */
+.lb-tabs-wrap {
+  padding: 0.75rem 2rem 0;
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.lb-tabs {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding-bottom: 0.75rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.lb-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.lb-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid var(--outline-variant);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.lb-tab:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--outline);
+}
+
+.lb-tab--active {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.lb-tab-icon {
+  font-size: 0.9rem;
+}
+
+.lb-tab-label {
+  font-size: 0.78rem;
+}
+
+/* ── Content ── */
+.lb-content {
+  flex: 1;
+  padding: 1.5rem 2rem;
+}
+
+/* ── Table ── */
+.lb-table-wrap {
+  background: var(--surface-container);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.lb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.lb-table thead th {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--outline);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.lb-th-rank { width: 60px; text-align: center; }
+.lb-th-rating { width: 100px; }
+.lb-th-progress { width: 90px; }
+.lb-th-status { width: 100px; }
+
+.lb-row {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.lb-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.lb-row td {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  vertical-align: middle;
+}
+
+/* ── Rank ── */
+.lb-rank {
+  text-align: center;
+}
+
+.lb-rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--on-surface-variant);
+  background: var(--surface-container-high);
+}
+
+.lb-rank--top1 {
+  background: linear-gradient(135deg, #ffd700 0%, #f59e0b 100%);
+  color: #1a1a1a;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+.lb-rank--top2 {
+  background: linear-gradient(135deg, #c0c0c0 0%, #9ca3af 100%);
+  color: #1a1a1a;
+}
+
+.lb-rank--top3 {
+  background: linear-gradient(135deg, #cd7f32 0%, #b45309 100%);
+  color: #fff;
+}
+
+/* ── Player Cell ── */
+.lb-player-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lb-title-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.lb-player-name {
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.lb-patron {
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+/* ── Rating ── */
+.lb-rating {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--primary);
+}
+
+/* ── Progress ── */
+.lb-progress {
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: var(--outline);
+}
+
+.lb-progress--up {
+  color: var(--secondary);
+}
+
+.lb-progress--down {
+  color: var(--error);
+}
+
+/* ── Status ── */
+.lb-status-cell {
+  text-align: left;
+}
+
+.lb-online-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--secondary);
+  background: rgba(78, 222, 163, 0.08);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+}
+
+.lb-online-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--secondary);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--secondary);
+}
+
+.lb-offline-badge {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--outline);
+}
+
+/* ── Loading / Error / Empty ── */
+.lb-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 3rem;
+  font-size: 0.85rem;
+  color: var(--on-surface-variant);
+}
+
+.lb-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--outline-variant);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: lbSpin 0.8s linear infinite;
+}
+
+@keyframes lbSpin {
+  to { transform: rotate(360deg); }
+}
+
+.lb-error {
+  padding: 1rem;
+  background: rgba(255, 180, 171, 0.06);
+  border: 1px solid rgba(255, 180, 171, 0.15);
+  border-radius: var(--radius-md);
+  color: var(--error);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.lb-empty {
+  padding: 3rem;
+  text-align: center;
+  color: var(--on-surface-variant);
+  font-size: 0.9rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .lb-topbar {
+    padding: 1rem 1rem 0.75rem;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .lb-tabs-wrap {
+    padding: 0.5rem 1rem 0;
+  }
+
+  .lb-content {
+    padding: 1rem;
+  }
+
+  .lb-th-progress,
+  .lb-th-status {
+    display: none;
+  }
+
+  .lb-progress,
+  .lb-status-cell {
+    display: none;
+  }
+
+  .lb-row td {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .lb-table {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .lb-table {
+    font-size: 0.75rem;
+  }
+
+  .lb-rank-badge {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+  }
+
+  .lb-tab {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.72rem;
+  }
+}
